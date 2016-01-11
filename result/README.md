@@ -1,0 +1,1 @@
+This directory contains data we get from the filter, or some middle results  
