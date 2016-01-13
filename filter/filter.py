@@ -18,7 +18,7 @@ class Filter(object):
         self.end_date = e_date
         self.c_id = cid
 
-        outfile = '../result/' + repr(cid) + '_' + repr(s_date) + '_' + repr(e_date) + '.orig'
+        outfile = '../result/' + cid + '_' + repr(s_date) + '_' + repr(e_date) + '.orig'
         self.output = open(outfile, 'w')
 
         self.filelist = list()
@@ -40,6 +40,7 @@ class Filter(object):
         print ('Total %d files' % (len(self.filelist)))
 
     def __parse_gzfile_cid_sub(self, filename):
+        # get the log data with a certain CID
         print ('parse' + filename)
         counter = 0
         invalid_counter = 0
@@ -63,7 +64,7 @@ class Filter(object):
                     self.output.write(json.dumps(newlog) + '\n')
                     cid_counter += 1
                 valid_counter += 1
-            except ValueError:
+            except (ValueError, KeyError):
                 invalid_counter += 1
                 continue
         print ('%d logs related to %s' % (cid_counter, self.c_id))
@@ -78,6 +79,7 @@ class Filter(object):
         print ()
 
     def test(self):
+        '''
         type_set = set()
         invalid_count = 0
         valid_count = 0
@@ -101,11 +103,14 @@ class Filter(object):
             print (i)
         print (invalid_count)
         print (valid_count)
+        '''
+        self.filelist.append('../data/tracking.log-20151215.gz')
+        self.parse_gzfile_cid()
 
 def main():
     f = Filter(20151201, 20151231, '20740042X')
     #f.gen_filelist()
-    #f.parse_gzfile()
+    #f.parse_gzfile_cid()
     f.test()
 
 if __name__ == '__main__':
