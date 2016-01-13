@@ -126,12 +126,30 @@ class Filter(object):
 
     def parse_video_time_by_user(self):
         filename = '../result/' + self.c_id + '.video'
+        invalid_counter = 0
         # key of this dict is (user_id + video_id)
         # value of this dict is the start time of this video
         # when we meet the pause_video, we aggregate the time of this video
         user_video_time = dict()
         for i in filename:
+            try:
+                content = json.loads(i, strict=False)
+                uname = content['username']
+                uid = content['context']['user_id']
+                if uname == '' or uid == '':
+                    invalid_counter += 1
+                    continue
 
+                if uid not in user_video_time:
+                    user_video_time[uid] = {}
+
+                date = content['time'][:10]
+                if date not in user_video_time[uid]:
+                    user_video_time[uid][date] = {}
+                
+            except (ValueError, KeyError):
+                invalid_counter += 1
+                continue
 
     def test(self):
         '''
