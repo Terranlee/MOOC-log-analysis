@@ -1,1 +1,3 @@
 data/*.gz
+data/*.data
+result/*.orig
