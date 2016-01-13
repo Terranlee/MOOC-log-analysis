@@ -18,25 +18,19 @@ class Filter(object):
         self.end_date = e_date
         self.c_id = cid
 
-        outfile = '../result/' + cid + '_' + repr(s_date) + '_' + repr(e_date) + '.orig'
-        self.output = open(outfile, 'w')
-
         self.filelist = list()
 
-    def __del__(self):
-        self.output.close()
-
-    def __gen_filelist_sub(self, rdir):
+    def __gen_gzfilelist_sub(self, rdir):
         for i in os.listdir(rdir):
             if i.endswith('.gz') and i.startswith('tracking.log-'):
                 date = i[13:21]
                 if date >= self.start_date and date <= self.end_date:
                     self.filelist.append(rdir + i)
 
-    def gen_filelist(self):
+    def gen_gzfilelist(self):
         all_dirs = ['edxdbweb1', 'edxdbweb2', 'edxdbweb5', 'edxdbweb6']
         for i in all_dirs:
-            self.__gen_filelist_sub('/mnt/logs/' + i + '/log/tracking/')
+            self.__gen_gzfilelist_sub('/mnt/logs/' + i + '/log/tracking/')
         print ('Total %d files' % (len(self.filelist)))
 
     def __parse_gzfile_cid_sub(self, filename):
@@ -61,6 +55,7 @@ class Filter(object):
                     newlog['context'] = content['context']
                     newlog['referer'] = content['referer']
                     newlog['event'] = content['event']
+                    newlog['time'] = content['time']
                     self.output.write(json.dumps(newlog) + '\n')
                     cid_counter += 1
                 valid_counter += 1
@@ -73,10 +68,70 @@ class Filter(object):
         return cid_counter
 
     def parse_gzfile_cid(self):
+        outfile = '../result/' + self.c_id + '_' + repr(self.start_date) + '_' + repr(self.end_date) + '.orig'
+        self.output = open(outfile, 'w')
+
         counter = 0
         for i in self.filelist:
             counter += self.__parse_gzfile_cid_sub(i)
-        print ()
+        print ('--------Total %d log data--------' % (counter))
+
+        self.output.close()
+
+    def gen_orig_filelist(self):
+        self.filelist = list()
+        for i in os.listdir('../result/'):
+            if i.endswith('.orig') and i.startswith(self.cid):
+                self.filelist.append(i)
+
+    def __parse_log_by_event_type_sub(self, filename):
+        print ('parse' + filename)
+        video_counter = 0
+        analytic_counter = 0
+        invalid_counter = 0
+        for i in open(filename):
+            try:
+                content = json.loads(i, strict=False)
+                event_type = content['event_type']
+                if event_type in self.video_type:
+                    self.video_out.write(i + '\n')
+                    video_counter += 1
+                else if event_type in self.analytic_type:
+                    self.analytic_out.write(i + '\n')
+                    analytic_counter += 1
+            except (ValueError, KeyError):
+                invalid_counter += 1
+                continue
+        print ('%d logs related to video' % (video_counter))
+        print ('%d logs related to analytic' % (analytic_counter))
+        print ('%d logs are invalid' % (invalid_counter))
+        return (video_counter, analytic_counter)
+
+    def parse_log_by_event_type(self):
+        self.video_out = '../result/' + self.c_id + '.video'
+        self.analytic_out = '../result/' + self.c_id + '.analytic'
+
+        self.video_type = {'play_video', 'pause_video'}
+        self.analytic_type = {'/analytic_track/i', '/analytic_track/p', '/analytic_track/t'}
+
+        video_counter = 0
+        analytic_counter = 0
+        for i in self.filelist:
+            (video_counter, analytic_counter) += self.__parse_log_by_event_type_sub(i)
+        print ('--------Total %d video log--------' % (video_counter))
+        print ('--------Total %d analytic log--------' % (analytic_counter))
+
+        self.video_out.close()
+        self.analytic_out.close()
+
+    def parse_video_time_by_user(self):
+        filename = '../result/' + self.c_id + '.video'
+        # key of this dict is (user_id + video_id)
+        # value of this dict is the start time of this video
+        # when we meet the pause_video, we aggregate the time of this video
+        user_video_time = dict()
+        for i in filename:
+
 
     def test(self):
         '''
@@ -109,7 +164,7 @@ class Filter(object):
 
 def main():
     f = Filter(20151201, 20151231, '20740042X')
-    #f.gen_filelist()
+    #f.gen_gzfilelist()
     #f.parse_gzfile_cid()
     f.test()
 
