@@ -24,7 +24,7 @@ class Filter(object):
         for i in os.listdir(rdir):
             if i.endswith('.gz') and i.startswith('tracking.log-'):
                 date = i[13:21]
-                if date >= self.start_date and date <= self.end_date:
+                if date >= repr(self.start_date) and date <= repr(self.end_date):
                     self.filelist.append(rdir + i)
 
     def gen_gzfilelist(self):
@@ -48,15 +48,16 @@ class Filter(object):
                 content = json.loads(i, strict=False)
                 cid = content['context']['course_id']
                 # only record log data from the browser, not server
-                if cid.find(self.c_id) != -1 and content['event_source'] == 'browser':
-                    newlog = dict()
-                    newlog['username'] = content['username']
-                    newlog['event_type'] = content['event_type']
-                    newlog['context'] = content['context']
-                    newlog['referer'] = content['referer']
-                    newlog['event'] = content['event']
-                    newlog['time'] = content['time']
-                    self.output.write(json.dumps(newlog) + '\n')
+                if cid.find(self.c_id) != -1:
+                #if cid.find(self.c_id) != -1 and content['event_source'] == 'browser':
+                    #newlog = dict()
+                    #newlog['event_type'] = content['event_type']
+                    #newlog['event'] = content['event']
+                    #newlog['context'] = content['context']
+                    #newlog['referer'] = content['referer']
+                    #newlog['time'] = content['time']
+                    #self.output.write(json.dumps(newlog) + '\n')
+                    self.output.write(i + '\n')
                     cid_counter += 1
                 valid_counter += 1
             except (ValueError, KeyError):
@@ -96,7 +97,7 @@ class Filter(object):
                 if event_type in self.video_type:
                     self.video_out.write(i + '\n')
                     video_counter += 1
-                else if event_type in self.analytic_type:
+                elif event_type in self.analytic_type:
                     self.analytic_out.write(i + '\n')
                     analytic_counter += 1
             except (ValueError, KeyError):
@@ -116,8 +117,8 @@ class Filter(object):
 
         video_counter = 0
         analytic_counter = 0
-        for i in self.filelist:
-            (video_counter, analytic_counter) += self.__parse_log_by_event_type_sub(i)
+        #for i in self.filelist:
+            #(video_counter, analytic_counter) += self.__parse_log_by_event_type_sub(i)
         print ('--------Total %d video log--------' % (video_counter))
         print ('--------Total %d analytic log--------' % (analytic_counter))
 
@@ -181,10 +182,10 @@ class Filter(object):
         self.parse_gzfile_cid()
 
 def main():
-    f = Filter(20151201, 20151231, '20740042X')
-    #f.gen_gzfilelist()
-    #f.parse_gzfile_cid()
-    f.test()
+    f = Filter(20150906, 20151231, '20740042X')
+    f.gen_gzfilelist()
+    f.parse_gzfile_cid()
+    #f.test()
 
 if __name__ == '__main__':
     main()
