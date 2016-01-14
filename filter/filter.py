@@ -139,6 +139,21 @@ class Filter(object):
         temp = [i[1] - i[0] for i in timelist]
         sum_time = sum(temp)
 
+        start = 0
+        for i in range(1, len(timelist)):
+            if timelist[i][0] <= timelist[start][1]:
+                if timelist[i][1] > timelist[start][1]:
+                    timelist[start][1] = timelist[i][1]
+                    timelist[i][1] = timelist[i][0]
+                elif timelist[i][1] <= timelist[start][1]:
+                    timelist[i][1] = timelist[i][0]
+            elif timelist[i][0] > timelist[start][1]:
+                start = i
+
+        temp = [i[1] - i[0] for i in timelist]
+        overlap_time = sum(temp)
+        return sum_time, overlap_time
+
     def parse_video_time_by_user(self):
         filename = '../result/' + self.c_id + '.video'
         invalid_counter = 0
@@ -207,9 +222,14 @@ class Filter(object):
                 for video in user_video_time[user][date]:
                     timelist = user_video_time[user][date][video]
                     sum_time, overlap_time = self.calc_list_sum(timelist)
+                    user_video_time[user][date][video] = (sum_time, overlap_time)
+
+        # save the dict to json
+        output_file = open('../result/' + c_id + '.vid_time', 'w')
+        output_file.write(json.dumps(user_video_time) + '\n')
+        output_file.close()
 
     def test(self):
-        '''
         type_set = set()
         invalid_count = 0
         valid_count = 0
@@ -220,8 +240,6 @@ class Filter(object):
                 print (counter)
             try:
                 content = json.loads(i, strict=False)
-                if content['event_source'] == 'server':
-                    continue
                 type_set.add(content['event_type'])
                 valid_count += 1
             except ValueError:
@@ -236,7 +254,7 @@ class Filter(object):
         '''
         self.filelist.append('../data/tracking.log-20151215.gz')
         self.parse_gzfile_cid()
-
+        '''
 def main():
     f = Filter(20150906, 20151231, '20740042X')
     #f.gen_gzfilelist()
