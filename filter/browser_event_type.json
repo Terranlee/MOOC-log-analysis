@@ -3,45 +3,43 @@
    [
     "pause_video",
     "play_video",
+    "stop_video",
+    "load_video_error",
+    "seek_video",
 
     "cancel_fullscreen_video",
     "caption_lang_change_video",
     "cdn_perf",
     "fullscreen_video",
     "load_video",
-    "load_video_error",
-    "seek_video",
     "quality_change_video",
     "seq_goto",
     "seq_next",
     "seq_prev",
-    "stop_video",
     "waiting_video",
     "volume_change_video",
     "page_close",
-
+    "speed_change_video",
 
 
     "/analytic_track/i",
     "/analytic_track/p",
     "/analytic_track/t",
 
-
-
-    "hide_transcript",
-    "hide_transcript_bottom",
-    "oe_hide_question",
-    "oe_show_question",
-    
     "problem_check",
     "problem_graded",
     "problem_reset",
     "problem_save",
     "problem_show",
     
+
+    "hide_transcript",
+    "hide_transcript_bottom",
     "show_transcript",
     "show_transcript_bottom",
-    "speed_change_video",
+
+    "oe_hide_question",
+    "oe_show_question",
     
     "textbook.pdf.chapter.navigated",
 

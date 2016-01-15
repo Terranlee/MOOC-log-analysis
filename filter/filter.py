@@ -18,6 +18,7 @@ class Filter(object):
         self.end_date = e_date
         self.c_id = cid
 
+        self.all_dirs = ['edxdbweb1', 'edxdbweb2', 'edxdbweb5', 'edxdbweb6']
         self.filelist = list()
 
     def __gen_gzfilelist_sub(self, rdir):
@@ -28,14 +29,13 @@ class Filter(object):
                     self.filelist.append(rdir + i)
 
     def gen_gzfilelist(self):
-        all_dirs = ['edxdbweb1', 'edxdbweb2', 'edxdbweb5', 'edxdbweb6']
-        for i in all_dirs:
+        for i in self.all_dirs:
             self.__gen_gzfilelist_sub('/mnt/logs/' + i + '/log/tracking/')
         print ('Total %d files' % (len(self.filelist)))
 
     def __parse_gzfile_cid_sub(self, filename):
         # get the log data with a certain CID
-        print ('parse' + filename)
+        print ('parse ' + filename)
         counter = 0
         invalid_counter = 0
         valid_counter = 0
@@ -49,7 +49,7 @@ class Filter(object):
                 cid = content['context']['course_id']
                 # in this step we just filter all the log data related to course_id
                 if cid.find(self.c_id) != -1:
-                    self.output.write(i + '\n')
+                    self.output.write(i)
                     cid_counter += 1
                 valid_counter += 1
             except (ValueError, KeyError):
@@ -71,6 +71,38 @@ class Filter(object):
 
         self.output.close()
 
+    def __parse_gzfile_uid_date_sub(self, uid, filename):
+        print ('parse ' + filename)
+        invalid_counter = 0
+        uid_counter = 0
+        counter = 0
+        for i in gzip.open(filename, 'rt'):
+            counter += 1
+            if counter % 100000 == 0:
+                print (counter)
+            try:
+                content = json.loads(i, strict=False)
+                user_id = content['context']['user_id']
+                # get the log data related to a certain uid
+                if user_id == uid:
+                    self.output.write(i)
+                    uid_counter += 1
+            except (ValueError, KeyError):
+                invalid_counter += 1
+                continue
+        print ('%d logs related to %d' % (uid_counter, uid))
+        return uid_counter
+
+    def parse_gzfile_uid_date(self, uid, date):
+        self.output = open('../result/uid_' + repr(uid) + '_date_' + repr(uid) + '.orig')
+        uid_counter = 0
+        for i in self.all_dirs:
+            dirname = '/mnt/logs' + i + '/log/tracking/'
+            filename = dirname + 'tracking.log-' + repr(date) + '.gz'
+            uid_counter += self.__parse_gzfile_uid_date_sub(uid, filename)
+        print ('--------Total %d log data--------' % (uid_counter))
+        self.output.close()
+        
     def gen_orig_filelist(self):
         self.filelist = list()
         for i in os.listdir('../result/'):
@@ -80,9 +112,13 @@ class Filter(object):
     def __parse_log_by_event_type_sub(self, filename):
         print ('parse' + filename)
         counter = 0
+
         video_counter = 0
         forum_counter = 0
+        problem_counter = 0
+        other_counter = 0
         invalid_counter = 0
+
         for i in open(filename):
             try:
                 counter += 1
@@ -131,17 +167,28 @@ class Filter(object):
                     }
                     self.forum_out.write(json.dumps(newlog) + '\n')
                     forum_counter += 1
+                # other logs, not related to this project
+                else:
+                    self.other_out.write(i)
+                    other_counter += 1
             except (ValueError, KeyError):
+                self.invalid_out.write(i)
                 invalid_counter += 1
                 continue
+
         print ('%d logs related to video' % (video_counter))
         print ('%d logs related to forum' % (forum_counter))
+        print ('%d logs related to problem' % (problem_counter))
+        print ('%d logs are others' % (other_counter))
         print ('%d logs are invalid' % (invalid_counter))
-        return (video_counter, forum_counter)
+        return [video_counter, forum_counter, problem_counter, other_counter, invalid_counter]
 
     def parse_log_by_event_type(self):
         self.video_out = '../result/' + self.c_id + '.video'
         self.forum_out = '../result/' + self.c_id + '.forum'
+        self.problem_out = '../result/' + self.c_id + '.problem'
+        self.other_out = '../result/' + self.c_id + '.other'
+        self.invalid_out = '../result/' + self.c_id + '.invalid'
 
         self.video_type = { 'play_video', 
                             'pause_video', 
@@ -164,16 +211,64 @@ class Filter(object):
                 'django_comment_client.base.views.delete_comment'}
         '''
 
-        video_counter = 0
-        forum_counter = 0
-        #for i in self.filelist:
-            #(video_counter, analytic_counter) += self.__parse_log_by_event_type_sub(i)
-        print ('--------Total %d video log--------' % (video_counter))
-        print ('--------Total %d forum log--------' % (forum_counter))
+        self.problem_type = {   'problem_show',
+                                'problem_save',
+                                'problem_check',
+                                'problem_graded'}
+        '''
+            The following log related to problem_type are not considered:
+            {
+                'problem_reset',
+                'problem_get'}
+        '''
+
+        # video_counter, forum_counter, problem_counter, other_counter, invalid_counter
+        counters = [0, 0, 0, 0, 0]
+
+        for i in self.filelist:
+            templist = self.__parse_log_by_event_type_sub(i)
+            for j in range(len(templist)):
+                counters[j] += templist[j]
+
+        print ('--------Total %d video log--------' % (counters[0]))
+        print ('--------Total %d forum log--------' % (counters[1]))
+        print ('--------Total %d problem log--------' % (counters[2]))
+        print ('--------Total %d other log--------' % (counters[3]))
+        print ('--------Total %d invalid log--------' % (counters[4]))
 
         self.video_out.close()
         self.forum_out.close()
+        self.problem_out.close()
+        self.other_out.close()
+        self.invalid_out.close()
 
+    def check_event_type(self, filename):
+        print ('checking the type of ' + filename)
+        type_dict = dict()
+        counter = 0
+        invalid_counter = 0
+        valid_counter = 0
+
+        for i in open(filename, 'rt'):
+            counter += 1
+            if counter % 10000 == 0:
+                print (counter)
+            try:
+                content = json.loads(i, strict=False)
+                event_type = content['event_type']
+                if event_type not in type_dict:
+                    type_dict[event_type] = 0
+                type_dict[event_type] += 1
+                valid_counter += 1
+            except ValueError:
+                invalid_counter += 1
+                continue
+        type_list = sorted(type_dict.items(), key=lambda d:d[1], reverse=True)
+        for i in type_list:
+            print (i)
+        print (invalid_counter)
+        print (valid_counter)
+        
     def calc_list_sum(self, timelist):
         sum_time = overlap_time = 0
         timelist.sort()
@@ -276,8 +371,8 @@ class Filter(object):
 
     def test(self):
         type_set = set()
-        invalid_count = 0
-        valid_count = 0
+        invalid_counter = 0
+        valid_counter = 0
         counter = 0
         for i in open('../data/tracking.log-20151215.data', 'rt'):
             counter += 1
@@ -286,20 +381,21 @@ class Filter(object):
             try:
                 content = json.loads(i, strict=False)
                 type_set.add(content['event_type'])
-                valid_count += 1
+                valid_counter += 1
             except ValueError:
-                invalid_count += 1
+                invalid_counter += 1
                 continue
         type_list = list(type_set)
         type_list.sort()
         for i in type_list:
             print (i)
-        print (invalid_count)
-        print (valid_count)
+        print (invalid_counter)
+        print (valid_counter)
         '''
         self.filelist.append('../data/tracking.log-20151215.gz')
         self.parse_gzfile_cid()
         '''
+
 def main():
     f = Filter(20150906, 20151231, '20740042X')
     #f.gen_gzfilelist()
