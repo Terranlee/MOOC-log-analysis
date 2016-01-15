@@ -81,7 +81,7 @@ class Filter(object):
         print ('parse' + filename)
         counter = 0
         video_counter = 0
-        analytic_counter = 0
+        forum_counter = 0
         invalid_counter = 0
         for i in open(filename):
             try:
@@ -105,33 +105,74 @@ class Filter(object):
                     }
                     self.video_out.write(json.dumps(newlog) + '\n')
                     video_counter += 1
-                elif event_type in self.analytic_type:
-                    self.analytic_out.write(i + '\n')
-                    analytic_counter += 1
+                # all the logs related to forum database change
+                # this does not include viewing the forum only
+                elif event_type in self.forum_type:
+                    if content['username'] == '' or content['context']['user_id'] == '':
+                        continue
+                    newlog = {
+                        'event_type' : content['event_type'],
+                        'time' : content['time'],
+                        'context' : content['context'],
+                        'body' : content['event']['body'][:100]     # record at most 100 char of body
+                        'id' : content['event']['id']
+                    }
+                    self.forum_out.write(json.dumps(newlog) + '\n')
+                    forum_counter += 1
+                # other logs related to forum, but not related to database change
+                # entering a specific post, but only viewing
+                elif event_type.find('/discussion/forum/') != -1 and event_type[-1].isdigit():
+                    if content['username'] == '' or content['context']['user_id'] == '':
+                        continue
+                    newlog = {
+                        'event_type' : 'view_forum',
+                        'time' : content['time'],
+                        'context' : content['context'],
+                    }
+                    self.forum_out.write(json.dumps(newlog) + '\n')
+                    forum_counter += 1
             except (ValueError, KeyError):
                 invalid_counter += 1
                 continue
         print ('%d logs related to video' % (video_counter))
-        print ('%d logs related to analytic' % (analytic_counter))
+        print ('%d logs related to forum' % (forum_counter))
         print ('%d logs are invalid' % (invalid_counter))
-        return (video_counter, analytic_counter)
+        return (video_counter, forum_counter)
 
     def parse_log_by_event_type(self):
         self.video_out = '../result/' + self.c_id + '.video'
-        self.analytic_out = '../result/' + self.c_id + '.analytic'
+        self.forum_out = '../result/' + self.c_id + '.forum'
 
-        self.video_type = {'play_video', 'pause_video', 'seek_video', 'load_video_error'}
-        self.analytic_type = {'/analytic_track/i', '/analytic_track/p', '/analytic_track/t'}
+        self.video_type = { 'play_video', 
+                            'pause_video', 
+                            'seek_video', 
+                            'load_video_error',
+                            'stop_video'}
+
+        self.forum_type = { 'django_comment_client.base.views.vote_for_thread', 
+                            'django_comment_client.base.views.vote_for_comment', 
+                            'django_comment_client.base.views.update_comment',
+                            'django_comment_client.base.views.create_comment'}
+        '''
+            The following log related to forum_type are not considered:
+            {
+                'django_comment_client.base.views.undo_vote_for_comment',
+                'django_comment_client.base.views.follow_thread',
+                'django_comment_client.base.views.pin_thread',
+                'django_comment_client.base.views.openclose_thread',
+                'django_comment_client.base.views.openclose_thread',
+                'django_comment_client.base.views.delete_comment'}
+        '''
 
         video_counter = 0
-        analytic_counter = 0
+        forum_counter = 0
         #for i in self.filelist:
             #(video_counter, analytic_counter) += self.__parse_log_by_event_type_sub(i)
         print ('--------Total %d video log--------' % (video_counter))
-        print ('--------Total %d analytic log--------' % (analytic_counter))
+        print ('--------Total %d forum log--------' % (forum_counter))
 
         self.video_out.close()
-        self.analytic_out.close()
+        self.forum_out.close()
 
     def calc_list_sum(self, timelist):
         sum_time = overlap_time = 0
@@ -179,17 +220,21 @@ class Filter(object):
                 if etype == 'play_video':
                     if timelist[-1][0] == -1:
                         timelist[-1][0] = content['event']['currentTime']
-                if etype == 'pause_video':
+                elif etype == 'pause_video':
                     if timelist[-1][0] != -1:
                         timelist[-1][1] = content['event']['currentTime']
                         timelist.append( [-1, -1] )
-                if etype == 'seek_video':
+                elif etype == 'stop_video':
+                    if timelist[-1][0] != -1:
+                        timelist[-1][1] = content['event']['currentTime']
+                        timelist.append( [-1, -1] )
+                elif etype == 'seek_video':
                     # seek when the video is playing
                     # if seek when the video is paused, do nothing
                     if timelist[-1][0] != -1:
                         timelist[-1][1] = content['event']['old_time']
                         timelist.append( [content['event']['new_time'], -1] )
-                if etype == 'load_video_error':
+                elif etype == 'load_video_error':
                     if timelist[-1][0] != 0:
                         timelist[-1][1] = content['event']['currentTime']
                         timelist.append( [-1, -1] )
@@ -200,7 +245,7 @@ class Filter(object):
         # check if the list is correct
         # pop the last one if it is not finished
         invalid_counter = 0
-        invalid_video = open('../result/' + self.c_id + '.ivid', 'w')
+        invalid_video = open('../result/' + self.c_id + '.video_invalid', 'w')
         for user in user_video_time:
             for date in user_video_time[user]:
                 for video in user_video_time[user][date]:
@@ -225,7 +270,7 @@ class Filter(object):
                     user_video_time[user][date][video] = (sum_time, overlap_time)
 
         # save the dict to json
-        output_file = open('../result/' + c_id + '.vid_time', 'w')
+        output_file = open('../result/' + c_id + '.video_time', 'w')
         output_file.write(json.dumps(user_video_time) + '\n')
         output_file.close()
 
