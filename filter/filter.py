@@ -400,6 +400,33 @@ class Filter(object):
         output_file.write(json.dumps(user_video_time) + '\n')
         output_file.close()
 
+    def sort_log_by_timestamp(self, filename):
+        print ('sorting ' + filename)
+        invalid_counter = 0
+        counter = 0
+        log_dict = dict()
+        for i in open(filename):
+            try:
+                content = json.loads(i, strict=False)
+                time = content['time']
+                log_dict[time + repr(hash(i))] = i
+                counter += 1
+                if counter % 100000 == 0:
+                    print (counter)
+            except (ValueError, KeyError):
+                invalid_counter += 1
+                continue
+
+        print ('%d not same in %d' % (len(log_dict), counter))
+        print ('%d invalid log data' % (invalid_counter))
+
+        sorted_list = sorted(list(log_dict))
+        print ('saving to ' + filename + '.sorted')
+        output = open(filename + '.sorted', 'w')
+        for i in sorted_list:
+            output.write(log_dict[i])
+        output.close()
+
     def test(self):
         type_set = set()
         invalid_counter = 0
@@ -431,8 +458,9 @@ def main():
     f = Filter(20150906, 20151231, '20740042X')
     #f.gen_gzfilelist()
     #f.parse_gzfile_cid()
-    f.gen_orig_filelist()
-    f.parse_log_by_event_type()
+    #f.gen_orig_filelist()
+    #f.parse_log_by_event_type()
+    #f.sort_log_by_timestamp('../result/20740042X.invalid')
 
 if __name__ == '__main__':
     main()
