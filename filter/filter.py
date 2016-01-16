@@ -1,6 +1,6 @@
 # Filter for xuetangX log data
-# 20740042X
-# 502819
+# cid : 20740042X
+# uid : 502819
 import os
 import re
 import json
@@ -107,9 +107,10 @@ class Filter(object):
         
     def gen_orig_filelist(self):
         self.filelist = list()
-        for i in os.listdir('../result/'):
+        rdir = '../result/'
+        for i in os.listdir(rdir):
             if i.endswith('.orig') and i.startswith(self.c_id):
-                self.filelist.append(i)
+                self.filelist.append(rdir + i)
 
     def __parse_log_by_event_type_sub(self, filename):
         print ('parse' + filename)
@@ -156,7 +157,7 @@ class Filter(object):
                         'event_type' : content['event_type'],
                         'time' : content['time'],
                         'context' : content['context'],
-                        'body' : content['event']['body'][:100]     # record at most 100 char of body
+                        'body' : content['event']['body'][:100],    # record at most 100 char of body
                         'id' : content['event']['id'],
                         'referer' : content['referer']
                     }
@@ -210,12 +211,12 @@ class Filter(object):
         return [video_counter, forum_counter, forum_view_counter, problem_counter, other_counter, invalid_counter]
 
     def parse_log_by_event_type(self):
-        self.video_out = '../result/' + self.c_id + '.video'
-        self.forum_out = '../result/' + self.c_id + '.forum'
-        self.forum_view_out = '../result/' + self.c_id + '.forum_view'
-        self.problem_out = '../result/' + self.c_id + '.problem'
-        self.other_out = '../result/' + self.c_id + '.other'
-        self.invalid_out = '../result/' + self.c_id + '.invalid'
+        self.video_out = open('../result/' + self.c_id + '.video', 'w')
+        self.forum_out = open('../result/' + self.c_id + '.forum', 'w')
+        self.forum_view_out = open('../result/' + self.c_id + '.forum_view', 'w')
+        self.problem_out = open('../result/' + self.c_id + '.problem', 'w')
+        self.other_out = open('../result/' + self.c_id + '.other', 'w')
+        self.invalid_out = open('../result/' + self.c_id + '.invalid', 'w')
 
         self.video_type = { 'play_video', 
                             'pause_video', 
@@ -430,8 +431,18 @@ def main():
     f = Filter(20150906, 20151231, '20740042X')
     #f.gen_gzfilelist()
     #f.parse_gzfile_cid()
-    f.test()
+    f.gen_orig_filelist()
+    f.parse_log_by_event_type()
 
 if __name__ == '__main__':
     main()
 
+'''
+RESULT 2016/01/17
+--------Total 882090 video log--------
+--------Total 1851 forum log--------
+--------Total 15999 forum view log--------
+--------Total 46427 problem log--------
+--------Total 1822996 other log--------
+--------Total 168 invalid log--------
+'''
