@@ -165,12 +165,15 @@ class Filter(object):
                 elif event_type in self.problem_type:
                     if content['username'] == '' or content['context']['user_id'] == '':
                         continue
+                    # only record the problem_check event that happened on server
+                    if event_type == 'problem_check' and content['event_source'] == 'browser':
+                        continue
                     newlog = {
                         'event_type' : content['event_type'],
                         'time' : content['time'],
                         'context' : content['context'],
                         'referer' : content['referer'],
-
+                        'event' : content['event']
                     }
                     self.problem_out.write(json.dumps(newlog) + '\n')
                     problem_counter += 1
