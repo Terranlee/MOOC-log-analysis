@@ -1,6 +1,8 @@
 # Filter for xuetangX log data
 # 20740042X
+# 502819
 import os
+import re
 import json
 import gzip
 
@@ -106,7 +108,7 @@ class Filter(object):
     def gen_orig_filelist(self):
         self.filelist = list()
         for i in os.listdir('../result/'):
-            if i.endswith('.orig') and i.startswith(self.cid):
+            if i.endswith('.orig') and i.startswith(self.c_id):
                 self.filelist.append(i)
 
     def __parse_log_by_event_type_sub(self, filename):
@@ -115,9 +117,12 @@ class Filter(object):
 
         video_counter = 0
         forum_counter = 0
+        forum_view_counter = 0
         problem_counter = 0
         other_counter = 0
         invalid_counter = 0
+
+        forum_view_pattern = re.compile(r'.*?/discussion/forum/.*?/threads/[0-9a-z]*')
 
         for i in open(filename):
             try:
@@ -137,7 +142,8 @@ class Filter(object):
                         'event_type' : content['event_type'],
                         'event' : content['event'],
                         'context' : content['context'],
-                        'time' : content['time']
+                        'time' : content['time'],
+                        'referer' : content['referer']
                     }
                     self.video_out.write(json.dumps(newlog) + '\n')
                     video_counter += 1
@@ -151,24 +157,40 @@ class Filter(object):
                         'time' : content['time'],
                         'context' : content['context'],
                         'body' : content['event']['body'][:100]     # record at most 100 char of body
-                        'id' : content['event']['id']
+                        'id' : content['event']['id'],
+                        'referer' : content['referer']
                     }
                     self.forum_out.write(json.dumps(newlog) + '\n')
                     forum_counter += 1
+                elif event_type in self.problem_type:
+                    if content['username'] == '' or content['context']['user_id'] == '':
+                        continue
+                    newlog = {
+                        'event_type' : content['event_type'],
+                        'time' : content['time'],
+                        'context' : content['context'],
+                        'referer' : content['referer'],
+
+                    }
+                    self.problem_out.write(json.dumps(newlog) + '\n')
+                    problem_counter += 1
                 # other logs related to forum, but not related to database change
                 # entering a specific post, but only viewing
-                elif event_type.find('/discussion/forum/') != -1 and event_type[-1].isdigit():
+                elif forum_view_pattern.match(content['event_type']):
                     if content['username'] == '' or content['context']['user_id'] == '':
                         continue
                     newlog = {
                         'event_type' : 'view_forum',
                         'time' : content['time'],
                         'context' : content['context'],
+                        'referer' : content['referer']
                     }
-                    self.forum_out.write(json.dumps(newlog) + '\n')
-                    forum_counter += 1
+                    self.forum_view_out.write(json.dumps(newlog) + '\n')
+                    forum_view_counter += 1
                 # other logs, not related to this project
                 else:
+                    if content['username'] == '' or content['context']['user_id'] == '':
+                        continue
                     self.other_out.write(i)
                     other_counter += 1
             except (ValueError, KeyError):
@@ -178,14 +200,16 @@ class Filter(object):
 
         print ('%d logs related to video' % (video_counter))
         print ('%d logs related to forum' % (forum_counter))
+        print ('%d logs related to forum view' % (forum_view_counter))
         print ('%d logs related to problem' % (problem_counter))
         print ('%d logs are others' % (other_counter))
         print ('%d logs are invalid' % (invalid_counter))
-        return [video_counter, forum_counter, problem_counter, other_counter, invalid_counter]
+        return [video_counter, forum_counter, forum_view_counter, problem_counter, other_counter, invalid_counter]
 
     def parse_log_by_event_type(self):
         self.video_out = '../result/' + self.c_id + '.video'
         self.forum_out = '../result/' + self.c_id + '.forum'
+        self.forum_view_out = '../result/' + self.c_id + '.forum_view'
         self.problem_out = '../result/' + self.c_id + '.problem'
         self.other_out = '../result/' + self.c_id + '.other'
         self.invalid_out = '../result/' + self.c_id + '.invalid'
@@ -207,11 +231,10 @@ class Filter(object):
                 'django_comment_client.base.views.follow_thread',
                 'django_comment_client.base.views.pin_thread',
                 'django_comment_client.base.views.openclose_thread',
-                'django_comment_client.base.views.openclose_thread',
                 'django_comment_client.base.views.delete_comment'}
         '''
 
-        self.problem_type = {   'problem_show',
+        self.problem_type = {   'showanswer',
                                 'problem_save',
                                 'problem_check',
                                 'problem_graded'}
@@ -219,11 +242,13 @@ class Filter(object):
             The following log related to problem_type are not considered:
             {
                 'problem_reset',
-                'problem_get'}
+                'problem_get',
+                'problem_show',
+                'save_problem_success'}
         '''
 
-        # video_counter, forum_counter, problem_counter, other_counter, invalid_counter
-        counters = [0, 0, 0, 0, 0]
+        # video_counter, forum_counter, forum_view_counter, problem_counter, other_counter, invalid_counter
+        counters = [0, 0, 0, 0, 0, 0]
 
         for i in self.filelist:
             templist = self.__parse_log_by_event_type_sub(i)
@@ -232,12 +257,14 @@ class Filter(object):
 
         print ('--------Total %d video log--------' % (counters[0]))
         print ('--------Total %d forum log--------' % (counters[1]))
-        print ('--------Total %d problem log--------' % (counters[2]))
-        print ('--------Total %d other log--------' % (counters[3]))
-        print ('--------Total %d invalid log--------' % (counters[4]))
+        print ('--------Total %d forum view log--------' % (counters[2]))
+        print ('--------Total %d problem log--------' % (counters[3]))
+        print ('--------Total %d other log--------' % (counters[4]))
+        print ('--------Total %d invalid log--------' % (counters[5]))
 
         self.video_out.close()
         self.forum_out.close()
+        self.forum_view_out.close()
         self.problem_out.close()
         self.other_out.close()
         self.invalid_out.close()
