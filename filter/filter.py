@@ -331,7 +331,7 @@ class Filter(object):
         temp = all_path[: all_path.rfind('/')]
         return temp[temp.rfind('/')+1 :]
 
-    def __parse_forum_by_structure_sub(self, forum_file):
+    def __parse_forum_by_structure_sub(self, forum_file, forum_dict):
         counter = 0
         invalid_counter = 0
         print ('parsing ' + forum_file)
@@ -340,6 +340,9 @@ class Filter(object):
                 content = json.loads(i, strict=False)
                 referer = content['referer']
                 thread = referer[referer.rfind('/')+1 :]
+                # use this to filter some jump link from other website
+                if len(thread) != 24:
+                    continue
                 # create a new thread if needed
                 if thread not in forum_dict:
                     forum_dict[thread] = {'view' : [], 'vote' : [], 'update' : [], 'comment' : {}}
@@ -380,7 +383,7 @@ class Filter(object):
                     # if the update does not has a certain id, then update under thread
                     else:
                         forum_dict[thread]['update'].append(content)
-
+                counter += 1
             except (ValueError, KeyError):
                 invalid_counter += 1
                 continue
@@ -395,19 +398,23 @@ class Filter(object):
         counter = 0
         invalid_counter = 0
 
-        filename = '../result/' + self.c_id + '.forum'
+        filename = '../result/' + self.c_id + '.forum.sorted'
         c, ic = self.__parse_forum_by_structure_sub(filename, forum_dict)
         counter += c
         invalid_counter += ic
-        filename = '../result/' + self.c_id + '.forum_view'
+        filename = '../result/' + self.c_id + '.forum_view.sorted'
         c, ic = self.__parse_forum_by_structure_sub(filename, forum_dict)
         counter += c
         invalid_counter += ic
         
         print ('--------Total %d invalid data--------' % (invalid_counter))
         print (('--------Total %d valid data--------' % (counter)))
+
+        for i in forum_dict:
+            print ('!!!' + i + '!!!')
+    
         output = open('../result/' + self.c_id + '.structured_forum', 'w')
-        output_file.write(json.dumps(forum_dict) + '\n')
+        output.write(json.dumps(forum_dict) + '\n')
         output.close()
 
     def calc_list_sum(self, timelist):
@@ -538,7 +545,8 @@ class Filter(object):
         print (invalid_counter)
         print (valid_counter)
         '''
-        
+        self.parse_forum_by_structure()
+
 def main():
     f = Filter(20150906, 20151231, '20740042X')
     f.test()
