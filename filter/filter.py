@@ -417,6 +417,46 @@ class Filter(object):
         output.write(json.dumps(forum_dict) + '\n')
         output.close()
 
+    def __parse_referer(self, content):
+        referer = content['referer']
+        pos1 = referer.rfind('/', 0, -1)
+        pos2 = referer.rfind('/', 0, pos1)
+        return referer[pos2+1:pos1], referer[pos1+1:-1]
+
+    def parse_problem_structured(self):
+        '''
+            Parse the questions by structure
+            Show which part of questions belongs to each other
+        '''
+        problem_dict = dict()
+        counter = 0
+        invalid_counter = 0
+
+        filename = '../result/' + self.c_id + '.problem.sorted'
+        for i in open(filename):
+            try:
+                content = json.loads(i, strict=False)
+                index1, index2 = self.__parse_referer(content)
+                # create new two levels of index
+                if index1 not in problem_dict:
+                    problem_dict[index1] = dict()
+                if index2 not in problem_dict[index1]:
+                    problem_dict[index1][index2] = {'showanswer' : [], 'problem_save' : [], 
+                                                    'problem_check' : [], 'problem_graded' : []}
+
+                event_type = content['event_type']
+                problem_dict[index1][index2][event_type].append(content)
+                counter += 1
+            except (ValueError, KeyError):
+                invalid_counter += 1
+                continue
+        print ('--------Total %d invalid data--------' % (invalid_counter))
+        print (('--------Total %d valid data--------' % (counter)))
+
+        output = open('../result/' + self.c_id + '.structured_problem', 'w')
+        output.write(json.dumps(problem_dict) + '\n')
+        output.close()
+
     def calc_list_sum(self, timelist):
         '''
             A sub function called by parse_video_time_by_user
