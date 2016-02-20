@@ -296,11 +296,125 @@ class Filter(object):
                 continue
         type_list = sorted(type_dict.items(), key=lambda d:d[1], reverse=True)
         for i in type_list:
-            print (i)
-        print (invalid_counter)
-        print (valid_counter)
+            print ('%d log data with type %s' % (i[1], i[0]) )
+        print ('--------Total %d invalid log data--------' % (invalid_counter))
+        print ('--------Total %d valid log data--------' % (valid_counter))
+    
+    def sort_log_by_timestamp(self, filename):
+        print ('sorting ' + filename)
+        invalid_counter = 0
+        counter = 0
+        log_dict = dict()
+        for i in open(filename):
+            try:
+                content = json.loads(i, strict=False)
+                time = content['time']
+                log_dict[time + repr(hash(i))] = i
+                counter += 1
+                if counter % 100000 == 0:
+                    print (counter)
+            except (ValueError, KeyError):
+                invalid_counter += 1
+                continue
+        print ('%d independent log data in %d' % (len(log_dict), counter))
+        print ('%d invalid log data' % (invalid_counter))
+
+        sorted_list = sorted(list(log_dict))
+        print ('saving to ' + filename + '.sorted')
+        output = open(filename + '.sorted', 'w')
+        for i in sorted_list:
+            output.write(log_dict[i])
+        output.close()
+    
+    def __get_path(self, content):
+        all_path = content['context']['path']
+        temp = all_path[: all_path.rfind('/')]
+        return temp[temp.rfind('/')+1 :]
+
+    def __parse_forum_by_structure_sub(self, forum_file):
+        counter = 0
+        invalid_counter = 0
+        print ('parsing ' + forum_file)
+        for i in open(forum_file):
+            try:
+                content = json.loads(i, strict=False)
+                referer = content['referer']
+                thread = referer[referer.rfind('/')+1 :]
+                # create a new thread if needed
+                if thread not in forum_dict:
+                    forum_dict[thread] = {'view' : [], 'vote' : [], 'update' : [], 'comment' : {}}
+
+                event_type = content['event_type']
+                if event_type == 'view_forum':
+                    forum_dict[thread]['view'].append(content)
+                elif event_type == 'django_comment_client.base.views.vote_for_thread':
+                    forum_dict[thread]['vote'].append(content)
+                elif event_type == 'django_comment_client.base.views.vote_for_comment':
+                    path = self.__get_path(content)
+                    if path in forum_dict[thread]['comment']:
+                        forum_dict[thread]['comment'][path]['vote'].append(content)
+                    else:
+                        print ('!!!Can not find forum!!!')
+                        print (content['time'])
+                elif event_type == 'django_comment_client.base.views.create_comment':
+                    path = self.__get_path(content)
+                    # path == thread, this is the comment under a certain thread
+                    if path == thread:
+                        comment_id = content['id']
+                        forum_dict[thread]['comment'][comment_id] = content
+                        forum_dict[thread]['comment'][comment_id]['comment'] = list()
+                        forum_dict[thread]['comment'][comment_id]['vote'] = list()
+                        forum_dict[thread]['comment'][comment_id]['update'] = list()
+                    # path != thread, this is a comment under a certain comment
+                    else:
+                        if path in forum_dict[thread]['comment']:
+                            forum_dict[thread]['comment'][path]['comment'].append(content)
+                        else:
+                            print ('!!!Can not find forum!!!')
+                            print (content['time'])
+                elif event_type == 'django_comment_client.base.views.update_comment':
+                    path = self.__get_path(content)
+                    # if the update has a certain id, then update it under this id
+                    if path in forum_dict[thread]['comment']:
+                        forum_dict[thread]['comment'][path]['update'].append(content)
+                    # if the update does not has a certain id, then update under thread
+                    else:
+                        forum_dict[thread]['update'].append(content)
+
+            except (ValueError, KeyError):
+                invalid_counter += 1
+                continue
+        return counter, invalid_counter
+
+    def parse_forum_by_structure(self):
+        '''
+            Parse the forum by structure
+            Show which log is thread, which is comment, which is vote
+        '''
+        forum_dict = dict()
+        counter = 0
+        invalid_counter = 0
+
+        filename = '../result/' + self.c_id + '.forum'
+        c, ic = self.__parse_forum_by_structure_sub(filename, forum_dict)
+        counter += c
+        invalid_counter += ic
+        filename = '../result/' + self.c_id + '.forum_view'
+        c, ic = self.__parse_forum_by_structure_sub(filename, forum_dict)
+        counter += c
+        invalid_counter += ic
         
+        print ('--------Total %d invalid data--------' % (invalid_counter))
+        print (('--------Total %d valid data--------' % (counter)))
+        output = open('../result/' + self.c_id + '.structured_forum', 'w')
+        output_file.write(json.dumps(forum_dict) + '\n')
+        output.close()
+
     def calc_list_sum(self, timelist):
+        '''
+            A sub function called by parse_video_time_by_user
+            Calculate the overlapping video time
+        '''
         sum_time = overlap_time = 0
         timelist.sort()
         temp = [i[1] - i[0] for i in timelist]
@@ -400,34 +514,8 @@ class Filter(object):
         output_file.write(json.dumps(user_video_time) + '\n')
         output_file.close()
 
-    def sort_log_by_timestamp(self, filename):
-        print ('sorting ' + filename)
-        invalid_counter = 0
-        counter = 0
-        log_dict = dict()
-        for i in open(filename):
-            try:
-                content = json.loads(i, strict=False)
-                time = content['time']
-                log_dict[time + repr(hash(i))] = i
-                counter += 1
-                if counter % 100000 == 0:
-                    print (counter)
-            except (ValueError, KeyError):
-                invalid_counter += 1
-                continue
-
-        print ('%d not same in %d' % (len(log_dict), counter))
-        print ('%d invalid log data' % (invalid_counter))
-
-        sorted_list = sorted(list(log_dict))
-        print ('saving to ' + filename + '.sorted')
-        output = open(filename + '.sorted', 'w')
-        for i in sorted_list:
-            output.write(log_dict[i])
-        output.close()
-
     def test(self):
+        '''
         type_set = set()
         invalid_counter = 0
         valid_counter = 0
@@ -450,12 +538,10 @@ class Filter(object):
         print (invalid_counter)
         print (valid_counter)
         '''
-        self.filelist.append('../data/tracking.log-20151215.gz')
-        self.parse_gzfile_cid()
-        '''
-
+        
 def main():
     f = Filter(20150906, 20151231, '20740042X')
+    f.test()
     #f.gen_gzfilelist()
     #f.parse_gzfile_cid()
     #f.gen_orig_filelist()
@@ -473,4 +559,9 @@ RESULT 2016/01/17
 --------Total 46427 problem log--------
 --------Total 1822996 other log--------
 --------Total 168 invalid log--------
+'''
+
+'''
+视频行为具体怎么分析
+导学帖子，类似html的一个课程封面
 '''
