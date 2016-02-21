@@ -330,6 +330,11 @@ class Filter(object):
             output.write(log_dict[i])
         output.close()
     
+    def sort_all_log_files_by_timestamp(self):
+        file_suffix = ['.forum', '.forum_view', '.invalid', '.problem', '.video']
+        for i in file_suffix:
+            self.sort_log_by_timestamp('../result/' + self.c_id + i)
+
     def __get_path(self, content):
         all_path = content['context']['path']
         temp = all_path[: all_path.rfind('/')]
@@ -490,7 +495,7 @@ class Filter(object):
 
     def __calc_list_sum(self, timelist):
         '''
-            A sub function called by parse_video_time_by_user
+            A sub function called by compute video time
             Calculate the overlapping video time
         '''
         sum_time = overlap_time = 0
@@ -539,7 +544,7 @@ class Filter(object):
             for date in user_video_time[user]:
                 for video in user_video_time[user][date]:
                     timelist = user_video_time[user][date][video]
-                    sum_time, overlap_time = self.calc_list_sum(timelist)
+                    sum_time, overlap_time = self.__calc_list_sum(timelist)
                     user_video_time[user][date][video] = (sum_time, overlap_time)
 
     def parse_video_by_structure(self):
@@ -647,9 +652,14 @@ class Filter(object):
 
     def parse_course_structure(self):
         # parse the course structure
+
         # using the webpage downloaded directly from browser
         filename = '../result/' + self.c_id + '.html'
-
+        if not os.path.exists(filename):
+            print ('you need a webpage to introduce the course structure')
+            print ('you should download it from the `courseware\' page of your course')
+            assert(False)
+            
         # course_structure shows the structure of this course
         # course_mapping map the structure to the hash number
         course_structure = dict()
@@ -714,7 +724,32 @@ class Filter(object):
         for i in delete_file_suffix:
             if (self.c_id + i) in fileset:
                 print ('delete useless file: ' + self.c_id + i)
-                os.remove('../result/' + self.c_id + i)
+                #os.remove('../result/' + self.c_id + i)
+
+    def run_on_server(self):
+        # this function should run on the data server
+        self.gen_gzfilelist()
+        self.parse_gzfile_cid()
+        # this function will generate a file in ../result/
+        # you can copy this file to a local computer
+
+    def run_on_local_computer(self):
+        # this function can be called on data server or local computer
+        # parse the course structure
+        self.parse_course_structure()
+
+        # parse log data and sort them
+        self.gen_orig_filelist()
+        self.parse_log_by_event_type()
+        self.sort_all_log_files_by_timestamp()
+
+        # parse three kinds of log data
+        self.parse_problem_by_structure()
+        self.parse_forum_by_structure()
+        self.parse_video_by_structure()
+
+        self.files_check()
+        # data preparation ends here
 
     def test(self):
         '''
