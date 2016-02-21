@@ -658,23 +658,54 @@ class Filter(object):
         # using the webpage downloaded directly from browser
         filename = '../result/' + self.c_id + '.html'
 
+        # course_structure shows the structure of this course
+        # course_mapping map the structure to the hash number
         course_structure = dict()
+        course_mapping = dict()
+
         content = open(filename, 'r', encoding='utf-8').read()
         soup = BeautifulSoup(content, 'html.parser')
         related = soup.find_all('div', class_='chapter')
         for i in related:
             index1 = i.h3.a.string
             li = i.ul.find_all('p', class_='')
+            href_li = i.ul.find_all('a')
+            assert (len(li) == len(href_li))
             course_structure[index1] = [i.string for i in li]
+            single_index = set()
+            for it in range(len(li)):
+                referer = href_li[it].attrs['href']
+                pos1 = referer.rfind('/', 0, -1)
+                pos2 = referer.rfind('/', 0, pos1)
+                id1, id2 = referer[pos2+1:pos1], referer[pos1+1:-1]
+                assert (len(id1) == 32)
+                assert (len(id2) == 32)
+                single_index.add(id1)
+                course_mapping[id2] = li[it].string
+            assert (len(single_index) == 1)
 
         outfile = '../result/' + self.c_id + '.course_structure'
         output = open(outfile, 'w', encoding='utf-8')
-        '''
-        for i in course_structure:
-            output.write(i + '\n')
-        '''
-        output.write(json.dumps(course_structure, ensure_ascii=False))
+        output.write(json.dumps(course_structure, ensure_ascii=False) + '\n')
+        output.write(json.dumps(course_mapping, ensure_ascii=False) + '\n')
         output.close()
+
+    def load_course_structure(self):
+        # load the course structure and mapping from file
+        filename = '../result/' + self.c_id + '.course_structure'
+
+        course_structure = dict()
+        course_mapping = dict()
+
+        file_handle = open(filename, 'r', encoding='utf-8')
+        try:
+            content = file_handle.readline()
+            course_structure = json.loads(content, strict=False)
+            content = file_handle.readline()
+            course_mapping = json.loads(content, strict=False)
+        except (ValueError, KeyError):
+            print ('load course structure error')
+        return course_structure, course_mapping
 
     def test(self):
         '''
@@ -704,6 +735,7 @@ class Filter(object):
         #self.parse_problem_by_structure()
         #self.get_course_structure_by_url(url)
         self.parse_course_structure()
+        self.load_course_structure()
 
 def main():
     f = Filter(20150906, 20151231, '20740042X')
