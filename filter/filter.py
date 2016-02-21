@@ -699,6 +699,23 @@ class Filter(object):
             print ('load course structure error')
         return course_structure, course_mapping
 
+    def files_check(self):
+        file_suffix = [ '.structured_forum', '.structured_problem', 'structured_video',
+                        '.course_structure', '.html']
+        # check if there are files that are required but not exist
+        fileset = set(os.listdir('../result/'))
+        for i in file_suffix:
+            if (self.c_id + i) not in fileset:
+                print (self.c_id + i + ' does not exist')
+                assert(False)
+
+        # check if there are files that are useless and can be deleted
+        delete_file_suffix = ['.forum', '.forum_view', '.invalid', '.problem', '.video']
+        for i in delete_file_suffix:
+            if (self.c_id + i) in fileset:
+                print ('delete useless file: ' + self.c_id + i)
+                os.remove('../result/' + self.c_id + i)
+
     def test(self):
         '''
         type_set = set()
