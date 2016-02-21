@@ -1,3 +1,5 @@
+#-*- coding: utf-8 -*-
+
 # Filter for xuetangX log data
 # cid : 20740042X
 # uid : 502819
@@ -5,6 +7,8 @@ import os
 import re
 import json
 import gzip
+import urllib.request
+from bs4 import BeautifulSoup
 
 class Filter(object):
     '''docstring for Filter
@@ -340,9 +344,12 @@ class Filter(object):
                 content = json.loads(i, strict=False)
                 referer = content['referer']
                 thread = referer[referer.rfind('/')+1 :]
+
                 # use this to filter some jump link from other website
+                # thread length filter
                 if len(thread) != 24:
                     continue
+
                 # create a new thread if needed
                 if thread not in forum_dict:
                     forum_dict[thread] = {'view' : [], 'vote' : [], 'update' : [], 'comment' : {}}
@@ -428,7 +435,7 @@ class Filter(object):
         pos2 = referer.rfind('/', 0, pos1)
         return referer[pos2+1:pos1], referer[pos1+1:-1]
 
-    def parse_problem_structured(self):
+    def parse_problem_by_structure(self):
         '''
             Parse the questions by structure
             Show which part of questions belongs to each other
@@ -442,6 +449,12 @@ class Filter(object):
             try:
                 content = json.loads(i, strict=False)
                 index1, index2 = self.__parse_referer(content)
+
+                # use this to filter some actions from other sources
+                # thread length filter
+                if len(index1) != 32 or len(index2) != 32:
+                    continue
+
                 # create new two levels of index
                 if index1 not in problem_dict:
                     problem_dict[index1] = dict()
@@ -462,8 +475,13 @@ class Filter(object):
         print ('--------Total %d threads' % (len(problem_dict)))
         for i in problem_dict:
             print ('!!!' + i + '!!!')
+            s = 0
             for j in problem_dict[i]:
-                print ('\t---' + j + '---')
+                li = problem_dict[i][j]
+                sumlength = len(li['showanswer']) + len(li['problem_save']) + len(li['problem_check']) + len(li['problem_graded'])
+                print ('\t---%s---   %d logs' % (j, sumlength) )
+                s += sumlength
+            print ('!!!Total %d logs!!!' % (s))
         print ('--------All threads are shown--------')
 
         output = open('../result/' + self.c_id + '.structured_problem', 'w')
@@ -494,6 +512,54 @@ class Filter(object):
         temp = [i[1] - i[0] for i in timelist]
         overlap_time = sum(temp)
         return sum_time, overlap_time
+
+    def parse_video_by_structure(self):
+        '''
+            Parse the questions by structure
+            Show which part of questions belongs to each other
+        '''
+        # video_dict represent the structure of all the videos
+        # such as which video is under which thread
+        video_dict = dict()
+
+        # video_user_date represent how much time a video is watched 
+        # by a certain user on a certain day
+        video_user_date = dict()
+
+        counter = 0
+        invalid_counter = 0
+    
+        filename = '../result/' + self.c_id + '.video.sorted'
+        for i in open(filename):
+            try:
+                content = json.loads(i, strict=False)
+                index1, index2 = self.__parse_referer(content)
+
+                # use this to filter some actions from other sources
+                # thread length filter
+                '''
+                if len(index1) != 32 or len(index2) != 32:
+                    continue
+                '''
+                # create new two levels of index for video_dict
+                if index1 not in video_dict:
+                    video_dict[index1] = dict()
+                if index2 not in video_dict[index1]:
+                    video_dict[index1][index2] = set()
+
+                vid = content['event']['id']
+                if vid not in video_dict[index1][index2]:
+                    video_dict[index1][index2].add(vid)
+
+                if vid not in video_user_date:
+                    video_user_date[vid] = dict()
+
+            except (ValueError, KeyError):
+                invalid_counter += 1
+                continue
+        print ('--------Total %d invalid data--------' % (invalid_counter))
+        print (('--------Total %d valid data--------' % (counter)))
+
 
     def parse_video_time_by_user(self):
         filename = '../result/' + self.c_id + '.video'
@@ -574,6 +640,42 @@ class Filter(object):
         output_file.write(json.dumps(user_video_time) + '\n')
         output_file.close()
 
+    def get_course_structure_by_url(self, url):
+        # this function can not work...
+        # because you have to log in to see the details of a course
+        fp = urllib.request.urlopen(url)
+        webbytes = fp.read()
+        webstring = webbytes.decode('utf-8')
+        fp.close()
+
+        outfile = '../result/' + self.c_id + '.course_structure'
+        output = open(outfile, 'w', encoding='utf-8')
+        output.write(webstring)
+        output.close()
+
+    def parse_course_structure(self):
+        # parse the course structure
+        # using the webpage downloaded directly from browser
+        filename = '../result/' + self.c_id + '.html'
+
+        course_structure = dict()
+        content = open(filename, 'r', encoding='utf-8').read()
+        soup = BeautifulSoup(content, 'html.parser')
+        related = soup.find_all('div', class_='chapter')
+        for i in related:
+            index1 = i.h3.a.string
+            li = i.ul.find_all('p', class_='')
+            course_structure[index1] = [i.string for i in li]
+
+        outfile = '../result/' + self.c_id + '.course_structure'
+        output = open(outfile, 'w', encoding='utf-8')
+        '''
+        for i in course_structure:
+            output.write(i + '\n')
+        '''
+        output.write(json.dumps(course_structure, ensure_ascii=False))
+        output.close()
+
     def test(self):
         '''
         type_set = set()
@@ -598,7 +700,10 @@ class Filter(object):
         print (invalid_counter)
         print (valid_counter)
         '''
-        self.parse_forum_by_structure()
+        #self.parse_forum_by_structure()
+        #self.parse_problem_by_structure()
+        #self.get_course_structure_by_url(url)
+        self.parse_course_structure()
 
 def main():
     f = Filter(20150906, 20151231, '20740042X')
