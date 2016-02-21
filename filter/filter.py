@@ -335,6 +335,12 @@ class Filter(object):
         temp = all_path[: all_path.rfind('/')]
         return temp[temp.rfind('/')+1 :]
 
+    def __parse_referer(self, content):
+        referer = content['referer']
+        pos1 = referer.rfind('/', 0, -1)
+        pos2 = referer.rfind('/', 0, pos1)
+        return referer[pos2+1:pos1], referer[pos1+1:-1]
+
     def __parse_forum_by_structure_sub(self, forum_file, forum_dict):
         counter = 0
         invalid_counter = 0
@@ -429,12 +435,6 @@ class Filter(object):
         output.write(json.dumps(forum_dict) + '\n')
         output.close()
 
-    def __parse_referer(self, content):
-        referer = content['referer']
-        pos1 = referer.rfind('/', 0, -1)
-        pos2 = referer.rfind('/', 0, pos1)
-        return referer[pos2+1:pos1], referer[pos1+1:-1]
-
     def parse_problem_by_structure(self):
         '''
             Parse the questions by structure
@@ -488,7 +488,7 @@ class Filter(object):
         output.write(json.dumps(problem_dict) + '\n')
         output.close()
 
-    def calc_list_sum(self, timelist):
+    def __calc_list_sum(self, timelist):
         '''
             A sub function called by parse_video_time_by_user
             Calculate the overlapping video time
@@ -512,6 +512,35 @@ class Filter(object):
         temp = [i[1] - i[0] for i in timelist]
         overlap_time = sum(temp)
         return sum_time, overlap_time
+
+    def check_video_data_valid(self, video_user_date):
+        # check if the list is correct
+        # pop the last one if it is not finished
+        invalid_counter = 0
+        invalid_video = open('../result/' + self.c_id + '.video_invalid', 'w')
+        for vid in video_user_date:
+            for uid in video_user_date[vid]:
+                for date in video_user_date[vid][uid]:
+                    timelist = video_user_date[vid][uid][date]
+                    if timelist[-1][1] == -1:
+                        timelist.pop()
+                    for i in timelist:
+                        if i[1] < i[0]:
+                            invalid_counter += 1
+                            invalid_video.write('%s %s %s : ' % (uid, date, vid))
+                            invalid_video.write(repr(timelist) + '\n')
+                            del( video_user_date[vid][uid][date] )
+        print ('Total %d invalid video' % (invalid_counter))
+        invalid_video.close()
+
+    def compute_video_time(self, video_user_date):
+        # sort and compute sum time and overlap time for each video
+        for user in user_video_time:
+            for date in user_video_time[user]:
+                for video in user_video_time[user][date]:
+                    timelist = user_video_time[user][date][video]
+                    sum_time, overlap_time = self.calc_list_sum(timelist)
+                    user_video_time[user][date][video] = (sum_time, overlap_time)
 
     def parse_video_by_structure(self):
         '''
@@ -541,7 +570,7 @@ class Filter(object):
                 if len(index1) != 32 or len(index2) != 32:
                     continue
                 '''
-                # create new two levels of index for video_dict
+                # build the structure part of video logs
                 if index1 not in video_dict:
                     video_dict[index1] = dict()
                 if index2 not in video_dict[index1]:
@@ -551,38 +580,18 @@ class Filter(object):
                 if vid not in video_dict[index1][index2]:
                     video_dict[index1][index2].add(vid)
 
+                # build the user date part of video logs
+                uid = content['context']['user_id']
+                date = content['time'][:10]
+                etype = content['event_type']
                 if vid not in video_user_date:
                     video_user_date[vid] = dict()
+                if uid not in video_user_date[vid]:
+                    video_user_date[vid][uid] = dict()
+                if date not in video_user_date[vid][uid]:
+                    video_user_date[vid][uid][date] = [ [-1, -1] ]
 
-            except (ValueError, KeyError):
-                invalid_counter += 1
-                continue
-        print ('--------Total %d invalid data--------' % (invalid_counter))
-        print (('--------Total %d valid data--------' % (counter)))
-
-
-    def parse_video_time_by_user(self):
-        filename = '../result/' + self.c_id + '.video'
-        invalid_counter = 0
-        # key of this dict is (user_id + video_id)
-        # value of this dict is the start time of this video
-        # when we meet the pause_video, we aggregate the time of this video
-        user_video_time = dict()
-        for i in open(filename):
-            try:
-                content = json.loads(i, strict=False)
-                uid = content['context']['user_id']
-                if uid not in user_video_time:
-                    user_video_time[uid] = {}
-                date = content['time'][:10]
-                if date not in user_video_time[uid]:
-                    user_video_time[uid][date] = {}
-                vid = content['event']['id']
-                if vid not in user_video_time[uid][date]:
-                    user_video_time[uid][date][vid] = [ [-1, -1] ]
-
-                timelist = user_video_time[uid][date][vid]
-                etype = content['event_type']
+                timelist = video_user_date[vid][uid][date]
                 if etype == 'play_video':
                     if timelist[-1][0] == -1:
                         timelist[-1][0] = content['event']['currentTime']
@@ -607,37 +616,20 @@ class Filter(object):
             except (ValueError, KeyError):
                 invalid_counter += 1
                 continue
+        print ('--------Total %d invalid data--------' % (invalid_counter))
+        print ('--------Total %d valid data--------' % (counter))
 
-        # check if the list is correct
-        # pop the last one if it is not finished
-        invalid_counter = 0
-        invalid_video = open('../result/' + self.c_id + '.video_invalid', 'w')
-        for user in user_video_time:
-            for date in user_video_time[user]:
-                for video in user_video_time[user][date]:
-                    timelist = user_video_time[user][date][video]
-                    if timelist[-1][1] == -1:
-                        timelist.pop()
-                    for i in timelist:
-                        if i[1] < i[0]:
-                            invalid_counter += 1
-                            invalid_video.write('%s %s %s : ' % (user, date, video))
-                            invalid_video.write(repr(timelist) + '\n')
-                            del( user_video_time[user][date][video] )
-        print ('Total %d invalid video' % (invalid_counter))
-        invalid_video.close()
+        # check valid of video data, and calculate overall time
+        self.check_video_data_valid(video_user_date)
+        self.compute_video_time(video_user_date)
 
-        # sort and compute video time
-        for user in user_video_time:
-            for date in user_video_time[user]:
-                for video in user_video_time[user][date]:
-                    timelist = user_video_time[user][date][video]
-                    sum_time, overlap_time = self.calc_list_sum(timelist)
-                    user_video_time[user][date][video] = (sum_time, overlap_time)
+        # dump to file
+        output_file = open('../result/' + c_id + '.structured_video', 'w')
+        output_file.write(json.dumps(video_dict) + '\n')
+        output_file.close()
 
-        # save the dict to json
         output_file = open('../result/' + c_id + '.video_time', 'w')
-        output_file.write(json.dumps(user_video_time) + '\n')
+        output_file.write(json.dumps(video_user_date) + '\n')
         output_file.close()
 
     def get_course_structure_by_url(self, url):
