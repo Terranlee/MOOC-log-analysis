@@ -356,6 +356,7 @@ class Filter(object):
                     path = self.__get_path(content)
                     if path in forum_dict[thread]['comment']:
                         forum_dict[thread]['comment'][path]['vote'].append(content)
+                    # there is no such 1-level comment for you to vote
                     else:
                         print ('!!!Can not find forum!!!')
                         print (content['time'])
@@ -372,6 +373,7 @@ class Filter(object):
                     else:
                         if path in forum_dict[thread]['comment']:
                             forum_dict[thread]['comment'][path]['comment'].append(content)
+                        # there is no such 1-level comment for you to add 2-level comment
                         else:
                             print ('!!!Can not find forum!!!')
                             print (content['time'])
@@ -381,6 +383,7 @@ class Filter(object):
                     if path in forum_dict[thread]['comment']:
                         forum_dict[thread]['comment'][path]['update'].append(content)
                     # if the update does not has a certain id, then update under thread
+                    # this may be caused by update of a 2-level comment
                     else:
                         forum_dict[thread]['update'].append(content)
                 counter += 1
@@ -410,8 +413,10 @@ class Filter(object):
         print ('--------Total %d invalid data--------' % (invalid_counter))
         print (('--------Total %d valid data--------' % (counter)))
 
+        print ('--------Total %d threads are as followed--------' % (len(forum_dict)))
         for i in forum_dict:
             print ('!!!' + i + '!!!')
+        print ('--------All threads are shown--------')
     
         output = open('../result/' + self.c_id + '.structured_forum', 'w')
         output.write(json.dumps(forum_dict) + '\n')
@@ -450,8 +455,16 @@ class Filter(object):
             except (ValueError, KeyError):
                 invalid_counter += 1
                 continue
+
         print ('--------Total %d invalid data--------' % (invalid_counter))
         print (('--------Total %d valid data--------' % (counter)))
+
+        print ('--------Total %d threads' % (len(problem_dict)))
+        for i in problem_dict:
+            print ('!!!' + i + '!!!')
+            for j in problem_dict[i]:
+                print ('\t---' + j + '---')
+        print ('--------All threads are shown--------')
 
         output = open('../result/' + self.c_id + '.structured_problem', 'w')
         output.write(json.dumps(problem_dict) + '\n')
