@@ -577,7 +577,31 @@ class Filter(object):
                     sum_time, overlap_time = self.__calc_list_sum(timelist)
                     video_user_date[vid][uid][date] = (sum_time, overlap_time)
 
-    def debug_filter_type(self, filename, event_type):
+    def show_video_structure(self, video_user_date, video_dict):
+        video_time = dict()
+        for vid in video_user_date:
+            stime = 0
+            otime = 0
+            for uid in video_user_date[vid]:
+                for date in video_user_date[vid][uid]:
+                    stime += video_user_date[vid][uid][date][0]
+                    otime += video_user_date[vid][uid][date][1]
+            video_time[vid] = [stime, otime]
+        lecture_time = dict()
+        for id1 in video_dict:
+            lecture_time[id1] = [0, 0]
+            for id2 in video_dict[id1]:
+                for vid in video_dict[id1][id2]:
+                    lecture_time[id1][0] += video_time[vid][0]
+                    lecture_time[id1][1] += video_time[vid][1]
+        print ('--------Total %d lectures are as followed--------' % (len(lecture_time)))
+        for i in lecture_time:
+            print ('!!!%s!!!' % (i))
+            print ('\t---%f sum time, %f overall time---' % (lecture_time[i][0], lecture_time[i][1]))
+        print ('--------All lectures are shown--------')
+
+
+    def debug_filter_by_event_type(self, filename, event_type):
         '''
             a debug function for all kinds of data
             given an event_type, get all related log data of this type
@@ -725,7 +749,8 @@ class Filter(object):
         # check valid of video data, and calculate overall time
         self.check_video_data_valid(video_user_date)
         self.compute_video_time(video_user_date)
-
+        self.show_video_structure(video_user_date, video_dict)
+        
         # dump to file
         for id1 in video_dict:
             for id2 in video_dict[id1]:
@@ -869,10 +894,9 @@ class Filter(object):
         #self.parse_course_structure()
         #self.parse_forum_by_structure()
         #self.parse_problem_by_structure()
-        #self.parse_video_by_structure()
+        self.parse_video_by_structure()
         #self.video_debug_filter('i4x-TsinghuaX-20740042X-video-a18cba64ddbe459a9897c070a3f04adf', 161855, '2015-10-28')
-        self.video_debug_filter('i4x-TsinghuaX-20740042X-video-a18cba64ddbe459a9897c070a3f04adf', 1085872, '2015-12-24')
-        #self.debug_filter_type('../result/20740042X.video.sorted', 'load_video_error') 
+        #self.debug_filter_by_event_type('../result/20740042X.video.sorted', 'load_video_error') 
 
 def main():
     f = Filter(20150906, 20151231, '20740042X')
