@@ -40,7 +40,7 @@ class Filter(object):
         print ('Total %d files' % (len(self.filelist)))
 
     def __parse_gzfile_cid_sub(self, filename):
-        # get the log data with a certain CID
+        ''' get the log data with a certain CID '''
         print ('parse ' + filename)
         counter = 0
         invalid_counter = 0
@@ -371,16 +371,17 @@ class Filter(object):
                 elif event_type == 'django_comment_client.base.views.vote_for_thread':
                     forum_dict[thread]['vote'].append(content)
                 elif event_type == 'django_comment_client.base.views.vote_for_comment':
+                    # you can not vote for a 2-level comment, so there is only one kind of vote for comment
                     path = self.__get_path(content)
                     if path in forum_dict[thread]['comment']:
                         forum_dict[thread]['comment'][path]['vote'].append(content)
                     # there is no such 1-level comment for you to vote
                     else:
-                        print ('!!!Can not find forum!!!')
+                        print ('!!!Can not find forum, vote_for_comment!!!')
                         print (content['time'])
                 elif event_type == 'django_comment_client.base.views.create_comment':
                     path = self.__get_path(content)
-                    # path == thread, this is the comment under a certain thread
+                    # path == thread, this is a 1-level comment under a certain thread
                     if path == thread:
                         comment_id = content['id']
                         forum_dict[thread]['comment'][comment_id] = content
@@ -393,7 +394,7 @@ class Filter(object):
                             forum_dict[thread]['comment'][path]['comment'].append(content)
                         # there is no such 1-level comment for you to add 2-level comment
                         else:
-                            print ('!!!Can not find forum!!!')
+                            print ('!!!Can not find forum, create_comment!!!')
                             print (content['time'])
                 elif event_type == 'django_comment_client.base.views.update_comment':
                     path = self.__get_path(content)
@@ -410,6 +411,20 @@ class Filter(object):
                 continue
         return counter, invalid_counter
 
+    def show_forum_structure(self, forum_dict):
+        print ('--------Total %d threads are as followed--------' % (len(forum_dict)))
+        for i in forum_dict:
+            print ('!!!' + i + '!!!')
+            view_count = len(forum_dict[i]['view'])
+            unview_count = len(forum_dict[i]['vote']) + len(forum_dict[i]['update'])
+            for j in forum_dict[i]['comment']:      # traverse all the comments
+                unview_count += 1       # the comment itself
+                unview_count += len(forum_dict[i]['comment'][j]['comment'])
+                unview_count += len(forum_dict[i]['comment'][j]['update'])
+                unview_count += len(forum_dict[i]['comment'][j]['vote'])
+            print ('\t---%d unview, %d view log data---' % (unview_count, view_count))
+        print ('--------All threads are shown--------')
+    
     def parse_forum_by_structure(self):
         '''
             Parse the forum by structure
@@ -430,15 +445,25 @@ class Filter(object):
         
         print ('--------Total %d invalid data--------' % (invalid_counter))
         print (('--------Total %d valid data--------' % (counter)))
+        
+        self.show_forum_structure(forum_dict)
 
-        print ('--------Total %d threads are as followed--------' % (len(forum_dict)))
-        for i in forum_dict:
-            print ('!!!' + i + '!!!')
-        print ('--------All threads are shown--------')
-    
         output = open('../result/' + self.c_id + '.structured_forum', 'w')
         output.write(json.dumps(forum_dict) + '\n')
         output.close()
+
+    def show_problem_structure(self, problem_dict):
+        print ('--------Total %d threads' % (len(problem_dict)))
+        for i in problem_dict:
+            print ('!!!' + i + '!!!')
+            s = 0
+            for j in problem_dict[i]:
+                li = problem_dict[i][j]
+                sumlength = len(li['showanswer']) + len(li['problem_save']) + len(li['problem_check']) + len(li['problem_graded'])
+                print ('\t---%s---   %d logs' % (j, sumlength) )
+                s += sumlength
+            print ('!!!Total %d logs!!!' % (s))
+        print ('--------All threads are shown--------')
 
     def parse_problem_by_structure(self):
         '''
@@ -455,7 +480,8 @@ class Filter(object):
                 content = json.loads(i, strict=False)
                 index1, index2 = self.__parse_referer(content)
 
-                # use this to filter some actions from other sources
+                # use this to filter some actions from other sources, like mail.163 ...
+                # this will filter about 1800 log data in 20740042X
                 # thread length filter
                 if len(index1) != 32 or len(index2) != 32:
                     continue
@@ -477,17 +503,7 @@ class Filter(object):
         print ('--------Total %d invalid data--------' % (invalid_counter))
         print (('--------Total %d valid data--------' % (counter)))
 
-        print ('--------Total %d threads' % (len(problem_dict)))
-        for i in problem_dict:
-            print ('!!!' + i + '!!!')
-            s = 0
-            for j in problem_dict[i]:
-                li = problem_dict[i][j]
-                sumlength = len(li['showanswer']) + len(li['problem_save']) + len(li['problem_check']) + len(li['problem_graded'])
-                print ('\t---%s---   %d logs' % (j, sumlength) )
-                s += sumlength
-            print ('!!!Total %d logs!!!' % (s))
-        print ('--------All threads are shown--------')
+        self.show_problem_structure(problem_dict)
 
         output = open('../result/' + self.c_id + '.structured_problem', 'w')
         output.write(json.dumps(problem_dict) + '\n')
@@ -519,33 +535,76 @@ class Filter(object):
         return sum_time, overlap_time
 
     def check_video_data_valid(self, video_user_date):
-        # check if the list is correct
-        # pop the last one if it is not finished
-        invalid_counter = 0
+        '''
+            check if the list is correct
+            pop the last one if it is not finished
+        '''
+        del_list = list()
+        video_counter = 0
+        for vid in video_user_date:
+            for uid in video_user_date[vid]:
+                for date in video_user_date[vid][uid]:
+                    video_counter += 1
+                    try:
+                        timelist = video_user_date[vid][uid][date]
+                        if timelist[-1][1] == -1:
+                            timelist.pop()
+                        for i in timelist:
+                            if i[0] - i[1] > 0.5:
+                                # in some cases, the time-interval is too short(less than 0.5)
+                                # this might be caused by other reasons, and should not be deleted
+                                del_list.append( (vid, uid, date) )
+                                break
+                    except (ValueError, TypeError):
+                        print (timelist)
         invalid_video = open('../result/' + self.c_id + '.video_invalid', 'w')
+        for i in del_list:
+            vid, uid, date = i[0], i[1], i[2]
+            timelist = video_user_date[vid][uid][date]
+            invalid_video.write('%s %s %s : ' % (vid, uid, date))
+            invalid_video.write(repr(timelist) + '\n')
+            del( video_user_date[vid][uid][date] )
+        invalid_video.close()
+        print ('Total %d invalid video in %d video' % (len(del_list), video_counter))
+
+    def compute_video_time(self, video_user_date):
+        ''' sort and compute sum time and overlap time for each video '''
         for vid in video_user_date:
             for uid in video_user_date[vid]:
                 for date in video_user_date[vid][uid]:
                     timelist = video_user_date[vid][uid][date]
-                    if timelist[-1][1] == -1:
-                        timelist.pop()
-                    for i in timelist:
-                        if i[1] < i[0]:
-                            invalid_counter += 1
-                            invalid_video.write('%s %s %s : ' % (uid, date, vid))
-                            invalid_video.write(repr(timelist) + '\n')
-                            del( video_user_date[vid][uid][date] )
-        print ('Total %d invalid video' % (invalid_counter))
-        invalid_video.close()
-
-    def compute_video_time(self, video_user_date):
-        # sort and compute sum time and overlap time for each video
-        for user in user_video_time:
-            for date in user_video_time[user]:
-                for video in user_video_time[user][date]:
-                    timelist = user_video_time[user][date][video]
                     sum_time, overlap_time = self.__calc_list_sum(timelist)
-                    user_video_time[user][date][video] = (sum_time, overlap_time)
+                    video_user_date[vid][uid][date] = (sum_time, overlap_time)
+
+    def video_debug_filter(self, vid, uid, date):
+        '''
+            a debug function for video log data
+            given vid, uid and date, get all log data related to these three parameter
+        '''
+        filename = '../result/' + self.c_id + '.video.sorted'
+        outfile = '../result/' + self.c_id + '_' + vid + '_' + repr(uid) + '_' + date
+        output = open(outfile, 'w')
+        invalid_counter = 0
+        valid_counter = 0
+        counter = 0
+        for i in open(filename):
+            try:
+                content = json.loads(i, strict=False)
+                cvid = content['event']['id']
+                cuid = content['context']['user_id']
+                cdate = content['time'][:10]
+                if cvid == vid and cuid == uid and cdate == date:
+                    output.write(i)
+                    valid_counter += 1
+                counter += 1
+                if counter % 100000 == 0:
+                    print ('---%d log data---' % (counter))
+            except(ValueError, KeyError):
+                invalid_counter += 1
+                continue
+        print ('--------Total %d invalid data--------' % (invalid_counter))
+        print ('--------Get %d data--------' % (valid_counter))
+        output.close()
 
     def parse_video_by_structure(self):
         '''
@@ -564,24 +623,27 @@ class Filter(object):
         invalid_counter = 0
     
         filename = '../result/' + self.c_id + '.video.sorted'
+        vid_prefix = 'i4x-TsinghuaX-' + self.c_id + '-video-'
+
         for i in open(filename):
             try:
                 content = json.loads(i, strict=False)
                 index1, index2 = self.__parse_referer(content)
+                vid = content['event']['id']
 
                 # use this to filter some actions from other sources
                 # thread length filter
-                '''
                 if len(index1) != 32 or len(index2) != 32:
                     continue
-                '''
+                if len(vid) != 62 or (not vid.startswith(vid_prefix)):
+                    continue
+
                 # build the structure part of video logs
                 if index1 not in video_dict:
                     video_dict[index1] = dict()
                 if index2 not in video_dict[index1]:
                     video_dict[index1][index2] = set()
 
-                vid = content['event']['id']
                 if vid not in video_dict[index1][index2]:
                     video_dict[index1][index2].add(vid)
 
@@ -609,8 +671,11 @@ class Filter(object):
                         timelist[-1][1] = content['event']['currentTime']
                         timelist.append( [-1, -1] )
                 elif etype == 'seek_video':
-                    # seek when the video is playing
-                    # if seek when the video is paused, do nothing
+                    # seek when the video is playing, if seek when the video is paused, then do nothing
+                    # when seeking video, new_time or old_time can be null...
+                    if content['event']['old_time'] == None or content['event']['new_time'] == None:
+                            invalid_counter += 1
+                            continue
                     if timelist[-1][0] != -1:
                         timelist[-1][1] = content['event']['old_time']
                         timelist.append( [content['event']['new_time'], -1] )
@@ -618,6 +683,9 @@ class Filter(object):
                     if timelist[-1][0] != 0:
                         timelist[-1][1] = content['event']['currentTime']
                         timelist.append( [-1, -1] )
+                counter += 1
+                if counter % 100000 == 0:
+                    print ('---%d log data---' % (counter))
             except (ValueError, KeyError):
                 invalid_counter += 1
                 continue
@@ -629,17 +697,22 @@ class Filter(object):
         self.compute_video_time(video_user_date)
 
         # dump to file
-        output_file = open('../result/' + c_id + '.structured_video', 'w')
+        for id1 in video_dict:
+            for id2 in video_dict[id1]:
+                video_dict[id1][id2] = list(video_dict[id1][id2])
+        output_file = open('../result/' + self.c_id + '.structured_video', 'w')
         output_file.write(json.dumps(video_dict) + '\n')
         output_file.close()
 
-        output_file = open('../result/' + c_id + '.video_time', 'w')
+        output_file = open('../result/' + self.c_id + '.video_time', 'w')
         output_file.write(json.dumps(video_user_date) + '\n')
         output_file.close()
 
     def get_course_structure_by_url(self, url):
-        # this function can not work...
-        # because you have to log in to see the details of a course
+        '''
+            this function can not work...
+            because you have to log in to see the details of a course
+        '''
         fp = urllib.request.urlopen(url)
         webbytes = fp.read()
         webstring = webbytes.decode('utf-8')
@@ -651,13 +724,15 @@ class Filter(object):
         output.close()
 
     def parse_course_structure(self):
-        # parse the course structure
-
+        '''
+            parse the course structure
+            create a mapping from hash-code to course name
+        '''
         # using the webpage downloaded directly from browser
         filename = '../result/' + self.c_id + '.html'
         if not os.path.exists(filename):
             print ('you need a webpage to introduce the course structure')
-            print ('you should download it from the `courseware\' page of your course')
+            print ('you should download it from the \'courseware\' page of your course')
             assert(False)
             
         # course_structure shows the structure of this course
@@ -693,7 +768,7 @@ class Filter(object):
         output.close()
 
     def load_course_structure(self):
-        # load the course structure and mapping from file
+        ''' load the course structure and mapping from file'''
         filename = '../result/' + self.c_id + '.course_structure'
 
         course_structure = dict()
@@ -710,8 +785,12 @@ class Filter(object):
         return course_structure, course_mapping
 
     def files_check(self):
+        ''' 
+            check if all files required are generated
+            check if we can delete some useless files
+        '''
         file_suffix = [ '.structured_forum', '.structured_problem', 'structured_video',
-                        '.course_structure', '.html']
+                        '.video_time', '.course_structure', '.html']
         # check if there are files that are required but not exist
         fileset = set(os.listdir('../result/'))
         for i in file_suffix:
@@ -724,17 +803,22 @@ class Filter(object):
         for i in delete_file_suffix:
             if (self.c_id + i) in fileset:
                 print ('delete useless file: ' + self.c_id + i)
-                #os.remove('../result/' + self.c_id + i)
+                os.remove('../result/' + self.c_id + i)
 
     def run_on_server(self):
-        # this function should run on the data server
+        '''
+            this function should run on the data server
+            there are some path related to the data server, like edxdbweb1
+        '''
         self.gen_gzfilelist()
         self.parse_gzfile_cid()
         # this function will generate a file in ../result/
         # you can copy this file to a local computer
 
     def run_on_local_computer(self):
-        # this function can be called on data server or local computer
+        '''
+            this function can run on data server or local computer
+        '''
         # parse the course structure
         self.parse_course_structure()
 
@@ -752,58 +836,30 @@ class Filter(object):
         # data preparation ends here
 
     def test(self):
-        '''
-        type_set = set()
-        invalid_counter = 0
-        valid_counter = 0
-        counter = 0
-        for i in open('../data/tracking.log-20151215.data', 'rt'):
-            counter += 1
-            if counter % 10000 == 0:
-                print (counter)
-            try:
-                content = json.loads(i, strict=False)
-                type_set.add(content['event_type'])
-                valid_counter += 1
-            except ValueError:
-                invalid_counter += 1
-                continue
-        type_list = list(type_set)
-        type_list.sort()
-        for i in type_list:
-            print (i)
-        print (invalid_counter)
-        print (valid_counter)
-        '''
+        #self.parse_course_structure()
         #self.parse_forum_by_structure()
         #self.parse_problem_by_structure()
-        #self.get_course_structure_by_url(url)
-        self.parse_course_structure()
-        self.load_course_structure()
+        #self.parse_video_by_structure()
+        self.video_debug_filter('i4x-TsinghuaX-20740042X-video-a18cba64ddbe459a9897c070a3f04adf', 756265, '2015-12-11')
 
 def main():
     f = Filter(20150906, 20151231, '20740042X')
     f.test()
-    #f.gen_gzfilelist()
-    #f.parse_gzfile_cid()
-    #f.gen_orig_filelist()
-    #f.parse_log_by_event_type()
-    #f.sort_log_by_timestamp('../result/20740042X.invalid')
 
 if __name__ == '__main__':
     main()
 
 '''
-RESULT 2016/01/17
---------Total 882090 video log--------
---------Total 1851 forum log--------
---------Total 15999 forum view log--------
---------Total 46427 problem log--------
---------Total 1822996 other log--------
---------Total 168 invalid log--------
+    RESULT 2016/01/17
+    --------Total 882090 video log--------
+    --------Total 1851 forum log--------
+    --------Total 15999 forum view log--------
+    --------Total 46427 problem log--------
+    --------Total 1822996 other log--------
+    --------Total 168 invalid log--------
 '''
 
 '''
-视频行为具体怎么分析
-导学帖子，类似html的一个课程封面
+    视频行为具体怎么分析
+    导学帖子，类似html的一个课程封面
 '''
