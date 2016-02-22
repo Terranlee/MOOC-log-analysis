@@ -539,7 +539,8 @@ class Filter(object):
             check if the list is correct
             pop the last one if it is not finished
         '''
-        del_list = list()
+        invalid_video = open('../result/' + self.c_id + '.video_invalid', 'w')
+        invalid_counter = 0
         video_counter = 0
         for vid in video_user_date:
             for uid in video_user_date[vid]:
@@ -550,22 +551,22 @@ class Filter(object):
                         if timelist[-1][1] == -1:
                             timelist.pop()
                         for i in timelist:
-                            if i[0] - i[1] > 0.5:
-                                # in some cases, the time-interval is too short(less than 0.5)
-                                # this might be caused by other reasons, and should not be deleted
-                                del_list.append( (vid, uid, date) )
+                            if i[0] > i[1]:
+                                # if there is an invalid pair, this timelist will be recorded
+                                # and we will delete the invalid pair
+                                invalid_video.write('%s %s %s : ' % (vid, uid, date))
+                                invalid_video.write(repr(timelist) + '\n')
+                                invalid_counter += 1
+                                templist = list()
+                                for j in timelist:
+                                    if i[0] <= i[1]:
+                                        templist.append(i)
+                                video_user_date[vid][uid][date] = templist
                                 break
                     except (ValueError, TypeError):
                         print (timelist)
-        invalid_video = open('../result/' + self.c_id + '.video_invalid', 'w')
-        for i in del_list:
-            vid, uid, date = i[0], i[1], i[2]
-            timelist = video_user_date[vid][uid][date]
-            invalid_video.write('%s %s %s : ' % (vid, uid, date))
-            invalid_video.write(repr(timelist) + '\n')
-            del( video_user_date[vid][uid][date] )
         invalid_video.close()
-        print ('Total %d invalid video in %d video' % (len(del_list), video_counter))
+        print ('Total %d invalid video in %d video' % (invalid_counter, video_counter))
 
     def compute_video_time(self, video_user_date):
         ''' sort and compute sum time and overlap time for each video '''
@@ -575,6 +576,33 @@ class Filter(object):
                     timelist = video_user_date[vid][uid][date]
                     sum_time, overlap_time = self.__calc_list_sum(timelist)
                     video_user_date[vid][uid][date] = (sum_time, overlap_time)
+
+    def debug_filter_type(self, filename, event_type):
+        '''
+            a debug function for all kinds of data
+            given an event_type, get all related log data of this type
+        '''
+        output_file = '../result/' + self.c_id + '.type.' + event_type
+        output = open(output_file, 'w')
+        invalid_counter = 0
+        valid_counter = 0
+        counter = 0
+        for i in open(filename):
+            try:
+                content = json.loads(i, strict=False)
+                etype = content['event_type']
+                if etype == event_type:
+                    output.write(i)
+                    valid_counter += 1
+                counter += 1
+                if counter % 100000 == 0:
+                    print ('---%d log data---' % (counter))
+            except(ValueError, KeyError):
+                invalid_counter += 1
+                continue
+        print ('--------Total %d invalid data--------' % (invalid_counter))
+        print ('--------Get %d data--------' % (valid_counter))
+        output.close()
 
     def video_debug_filter(self, vid, uid, date):
         '''
@@ -674,15 +702,17 @@ class Filter(object):
                     # seek when the video is playing, if seek when the video is paused, then do nothing
                     # when seeking video, new_time or old_time can be null...
                     if content['event']['old_time'] == None or content['event']['new_time'] == None:
-                            invalid_counter += 1
-                            continue
+                        invalid_counter += 1
+                        continue
                     if timelist[-1][0] != -1:
                         timelist[-1][1] = content['event']['old_time']
                         timelist.append( [content['event']['new_time'], -1] )
                 elif etype == 'load_video_error':
                     if timelist[-1][0] != 0:
-                        timelist[-1][1] = content['event']['currentTime']
-                        timelist.append( [-1, -1] )
+                        # sometimes, when load video error, currentTime = 0, which means nothing
+                        if content['event']['currentTime'] != 0:
+                            timelist[-1][1] = content['event']['currentTime']
+                            timelist.append( [-1, -1] )
                 counter += 1
                 if counter % 100000 == 0:
                     print ('---%d log data---' % (counter))
@@ -840,7 +870,9 @@ class Filter(object):
         #self.parse_forum_by_structure()
         #self.parse_problem_by_structure()
         #self.parse_video_by_structure()
-        self.video_debug_filter('i4x-TsinghuaX-20740042X-video-a18cba64ddbe459a9897c070a3f04adf', 756265, '2015-12-11')
+        #self.video_debug_filter('i4x-TsinghuaX-20740042X-video-a18cba64ddbe459a9897c070a3f04adf', 161855, '2015-10-28')
+        self.video_debug_filter('i4x-TsinghuaX-20740042X-video-a18cba64ddbe459a9897c070a3f04adf', 1085872, '2015-12-24')
+        #self.debug_filter_type('../result/20740042X.video.sorted', 'load_video_error') 
 
 def main():
     f = Filter(20150906, 20151231, '20740042X')
