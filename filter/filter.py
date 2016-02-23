@@ -25,6 +25,7 @@ class Filter(object):
         self.c_id = cid
 
         self.all_dirs = ['edxdbweb1', 'edxdbweb2', 'edxdbweb5', 'edxdbweb6']
+        self.result_dir = '../result/'
         self.filelist = list()
 
     def __gen_gzfilelist_sub(self, rdir):
@@ -67,7 +68,7 @@ class Filter(object):
         return cid_counter
 
     def parse_gzfile_cid(self):
-        outfile = '../result/' + self.c_id + '_' + repr(self.start_date) + '_' + repr(self.end_date) + '.orig'
+        outfile = self.result_dir + self.c_id + '_' + repr(self.start_date) + '_' + repr(self.end_date) + '.orig'
         self.output = open(outfile, 'w')
 
         counter = 0
@@ -111,7 +112,7 @@ class Filter(object):
         
     def gen_orig_filelist(self):
         self.filelist = list()
-        rdir = '../result/'
+        rdir = self.result_dir
         for i in os.listdir(rdir):
             if i.endswith('.orig') and i.startswith(self.c_id):
                 self.filelist.append(rdir + i)
@@ -215,12 +216,12 @@ class Filter(object):
         return [video_counter, forum_counter, forum_view_counter, problem_counter, other_counter, invalid_counter]
 
     def parse_log_by_event_type(self):
-        self.video_out = open('../result/' + self.c_id + '.video', 'w')
-        self.forum_out = open('../result/' + self.c_id + '.forum', 'w')
-        self.forum_view_out = open('../result/' + self.c_id + '.forum_view', 'w')
-        self.problem_out = open('../result/' + self.c_id + '.problem', 'w')
-        self.other_out = open('../result/' + self.c_id + '.other', 'w')
-        self.invalid_out = open('../result/' + self.c_id + '.invalid', 'w')
+        self.video_out = open(self.result_dir + self.c_id + '.video', 'w')
+        self.forum_out = open(self.result_dir + self.c_id + '.forum', 'w')
+        self.forum_view_out = open(self.result_dir + self.c_id + '.forum_view', 'w')
+        self.problem_out = open(self.result_dir + self.c_id + '.problem', 'w')
+        self.other_out = open(self.result_dir + self.c_id + '.other', 'w')
+        self.invalid_out = open(self.result_dir + self.c_id + '.invalid', 'w')
 
         self.video_type = { 'play_video', 
                             'pause_video', 
@@ -333,7 +334,7 @@ class Filter(object):
     def sort_all_log_files_by_timestamp(self):
         file_suffix = ['.forum', '.forum_view', '.invalid', '.problem', '.video']
         for i in file_suffix:
-            self.sort_log_by_timestamp('../result/' + self.c_id + i)
+            self.sort_log_by_timestamp(self.result_dir + self.c_id + i)
 
     def __get_path(self, content):
         all_path = content['context']['path']
@@ -345,6 +346,20 @@ class Filter(object):
         pos1 = referer.rfind('/', 0, -1)
         pos2 = referer.rfind('/', 0, pos1)
         return referer[pos2+1:pos1], referer[pos1+1:-1]
+
+    def show_forum_structure(self, forum_dict):
+        print ('--------Total %d threads are as followed--------' % (len(forum_dict)))
+        for i in forum_dict:
+            print ('!!!' + i + '!!!')
+            view_count = len(forum_dict[i]['view'])
+            unview_count = len(forum_dict[i]['vote']) + len(forum_dict[i]['update'])
+            for j in forum_dict[i]['comment']:      # traverse all the comments
+                unview_count += 1       # the comment itself
+                unview_count += len(forum_dict[i]['comment'][j]['comment'])
+                unview_count += len(forum_dict[i]['comment'][j]['update'])
+                unview_count += len(forum_dict[i]['comment'][j]['vote'])
+            print ('\t---%d unview, %d view log data---' % (unview_count, view_count))
+        print ('--------All threads are shown--------')
 
     def __parse_forum_by_structure_sub(self, forum_file, forum_dict):
         counter = 0
@@ -410,20 +425,6 @@ class Filter(object):
                 invalid_counter += 1
                 continue
         return counter, invalid_counter
-
-    def show_forum_structure(self, forum_dict):
-        print ('--------Total %d threads are as followed--------' % (len(forum_dict)))
-        for i in forum_dict:
-            print ('!!!' + i + '!!!')
-            view_count = len(forum_dict[i]['view'])
-            unview_count = len(forum_dict[i]['vote']) + len(forum_dict[i]['update'])
-            for j in forum_dict[i]['comment']:      # traverse all the comments
-                unview_count += 1       # the comment itself
-                unview_count += len(forum_dict[i]['comment'][j]['comment'])
-                unview_count += len(forum_dict[i]['comment'][j]['update'])
-                unview_count += len(forum_dict[i]['comment'][j]['vote'])
-            print ('\t---%d unview, %d view log data---' % (unview_count, view_count))
-        print ('--------All threads are shown--------')
     
     def parse_forum_by_structure(self):
         '''
@@ -434,11 +435,11 @@ class Filter(object):
         counter = 0
         invalid_counter = 0
 
-        filename = '../result/' + self.c_id + '.forum.sorted'
+        filename = self.result_dir + self.c_id + '.forum.sorted'
         c, ic = self.__parse_forum_by_structure_sub(filename, forum_dict)
         counter += c
         invalid_counter += ic
-        filename = '../result/' + self.c_id + '.forum_view.sorted'
+        filename = self.result_dir + self.c_id + '.forum_view.sorted'
         c, ic = self.__parse_forum_by_structure_sub(filename, forum_dict)
         counter += c
         invalid_counter += ic
@@ -448,7 +449,7 @@ class Filter(object):
         
         self.show_forum_structure(forum_dict)
 
-        output = open('../result/' + self.c_id + '.structured_forum', 'w')
+        output = open(self.result_dir + self.c_id + '.structured_forum', 'w')
         output.write(json.dumps(forum_dict) + '\n')
         output.close()
 
@@ -474,7 +475,7 @@ class Filter(object):
         counter = 0
         invalid_counter = 0
 
-        filename = '../result/' + self.c_id + '.problem.sorted'
+        filename = self.result_dir + self.c_id + '.problem.sorted'
         for i in open(filename):
             try:
                 content = json.loads(i, strict=False)
@@ -505,7 +506,7 @@ class Filter(object):
 
         self.show_problem_structure(problem_dict)
 
-        output = open('../result/' + self.c_id + '.structured_problem', 'w')
+        output = open(self.result_dir + self.c_id + '.structured_problem', 'w')
         output.write(json.dumps(problem_dict) + '\n')
         output.close()
 
@@ -539,7 +540,7 @@ class Filter(object):
             check if the list is correct
             pop the last one if it is not finished
         '''
-        invalid_video = open('../result/' + self.c_id + '.video_invalid', 'w')
+        invalid_video = open(self.result_dir + self.c_id + '.video_invalid', 'w')
         invalid_counter = 0
         video_counter = 0
         for vid in video_user_date:
@@ -600,64 +601,6 @@ class Filter(object):
             print ('\t---%f sum time, %f overall time---' % (lecture_time[i][0], lecture_time[i][1]))
         print ('--------All lectures are shown--------')
 
-
-    def debug_filter_by_event_type(self, filename, event_type):
-        '''
-            a debug function for all kinds of data
-            given an event_type, get all related log data of this type
-        '''
-        output_file = '../result/' + self.c_id + '.type.' + event_type
-        output = open(output_file, 'w')
-        invalid_counter = 0
-        valid_counter = 0
-        counter = 0
-        for i in open(filename):
-            try:
-                content = json.loads(i, strict=False)
-                etype = content['event_type']
-                if etype == event_type:
-                    output.write(i)
-                    valid_counter += 1
-                counter += 1
-                if counter % 100000 == 0:
-                    print ('---%d log data---' % (counter))
-            except(ValueError, KeyError):
-                invalid_counter += 1
-                continue
-        print ('--------Total %d invalid data--------' % (invalid_counter))
-        print ('--------Get %d data--------' % (valid_counter))
-        output.close()
-
-    def video_debug_filter(self, vid, uid, date):
-        '''
-            a debug function for video log data
-            given vid, uid and date, get all log data related to these three parameter
-        '''
-        filename = '../result/' + self.c_id + '.video.sorted'
-        outfile = '../result/' + self.c_id + '_' + vid + '_' + repr(uid) + '_' + date
-        output = open(outfile, 'w')
-        invalid_counter = 0
-        valid_counter = 0
-        counter = 0
-        for i in open(filename):
-            try:
-                content = json.loads(i, strict=False)
-                cvid = content['event']['id']
-                cuid = content['context']['user_id']
-                cdate = content['time'][:10]
-                if cvid == vid and cuid == uid and cdate == date:
-                    output.write(i)
-                    valid_counter += 1
-                counter += 1
-                if counter % 100000 == 0:
-                    print ('---%d log data---' % (counter))
-            except(ValueError, KeyError):
-                invalid_counter += 1
-                continue
-        print ('--------Total %d invalid data--------' % (invalid_counter))
-        print ('--------Get %d data--------' % (valid_counter))
-        output.close()
-
     def parse_video_by_structure(self):
         '''
             Parse the questions by structure
@@ -674,7 +617,7 @@ class Filter(object):
         counter = 0
         invalid_counter = 0
     
-        filename = '../result/' + self.c_id + '.video.sorted'
+        filename = self.result_dir + self.c_id + '.video.sorted'
         vid_prefix = 'i4x-TsinghuaX-' + self.c_id + '-video-'
 
         for i in open(filename):
@@ -755,11 +698,11 @@ class Filter(object):
         for id1 in video_dict:
             for id2 in video_dict[id1]:
                 video_dict[id1][id2] = list(video_dict[id1][id2])
-        output_file = open('../result/' + self.c_id + '.structured_video', 'w')
+        output_file = open(self.result_dir + self.c_id + '.structured_video', 'w')
         output_file.write(json.dumps(video_dict) + '\n')
         output_file.close()
 
-        output_file = open('../result/' + self.c_id + '.video_time', 'w')
+        output_file = open(self.result_dir + self.c_id + '.video_time', 'w')
         output_file.write(json.dumps(video_user_date) + '\n')
         output_file.close()
 
@@ -773,7 +716,7 @@ class Filter(object):
         webstring = webbytes.decode('utf-8')
         fp.close()
 
-        outfile = '../result/' + self.c_id + '.course_structure'
+        outfile = self.result_dir + self.c_id + '.course_structure'
         output = open(outfile, 'w', encoding='utf-8')
         output.write(webstring)
         output.close()
@@ -784,7 +727,7 @@ class Filter(object):
             create a mapping from hash-code to course name
         '''
         # using the webpage downloaded directly from browser
-        filename = '../result/' + self.c_id + '.html'
+        filename = self.result_dir + self.c_id + '.html'
         if not os.path.exists(filename):
             print ('you need a webpage to introduce the course structure')
             print ('you should download it from the \'courseware\' page of your course')
@@ -816,7 +759,7 @@ class Filter(object):
                 course_mapping[id2] = li[it].string
             assert (len(single_index) == 1)
 
-        outfile = '../result/' + self.c_id + '.course_structure'
+        outfile = self.result_dir + self.c_id + '.course_structure'
         output = open(outfile, 'w', encoding='utf-8')
         output.write(json.dumps(course_structure, ensure_ascii=False) + '\n')
         output.write(json.dumps(course_mapping, ensure_ascii=False) + '\n')
@@ -824,7 +767,7 @@ class Filter(object):
 
     def load_course_structure(self):
         ''' load the course structure and mapping from file'''
-        filename = '../result/' + self.c_id + '.course_structure'
+        filename = self.result_dir + self.c_id + '.course_structure'
 
         course_structure = dict()
         course_mapping = dict()
@@ -839,26 +782,89 @@ class Filter(object):
             print ('load course structure error')
         return course_structure, course_mapping
 
-    def files_check(self):
-        ''' 
-            check if all files required are generated
-            check if we can delete some useless files
-        '''
+    def files_check_exist(self):
         file_suffix = [ '.structured_forum', '.structured_problem', 'structured_video',
                         '.video_time', '.course_structure', '.html']
         # check if there are files that are required but not exist
-        fileset = set(os.listdir('../result/'))
+        fileset = set(os.listdir(self.result_dir))
         for i in file_suffix:
             if (self.c_id + i) not in fileset:
                 print (self.c_id + i + ' does not exist')
-                assert(False)
+                return False
+        return True
 
+    def files_check_delete(self):
         # check if there are files that are useless and can be deleted
         delete_file_suffix = ['.forum', '.forum_view', '.invalid', '.problem', '.video']
         for i in delete_file_suffix:
             if (self.c_id + i) in fileset:
                 print ('delete useless file: ' + self.c_id + i)
-                os.remove('../result/' + self.c_id + i)
+                os.remove(self.result_dir + self.c_id + i)
+
+    def files_check(self):
+        ''' 
+            check if all files required are generated
+            check if we can delete some useless files
+        '''
+        self.files_check_delete()
+        return self.files_check_exist()
+
+    def debug_filter_by_event_type(self, filename, event_type):
+        '''
+            a debug function for all kinds of data
+            given an event_type, get all related log data of this type
+        '''
+        output_file = self.result_dir + self.c_id + '.type.' + event_type
+        output = open(output_file, 'w')
+        invalid_counter = 0
+        valid_counter = 0
+        counter = 0
+        for i in open(filename):
+            try:
+                content = json.loads(i, strict=False)
+                etype = content['event_type']
+                if etype == event_type:
+                    output.write(i)
+                    valid_counter += 1
+                counter += 1
+                if counter % 100000 == 0:
+                    print ('---%d log data---' % (counter))
+            except(ValueError, KeyError):
+                invalid_counter += 1
+                continue
+        print ('--------Total %d invalid data--------' % (invalid_counter))
+        print ('--------Get %d data--------' % (valid_counter))
+        output.close()
+
+    def debug_video_filter(self, vid, uid, date):
+        '''
+            a debug function for video log data
+            given vid, uid and date, get all log data related to these three parameter
+        '''
+        filename = self.result_dir + self.c_id + '.video.sorted'
+        outfile = self.result_dir + self.c_id + '_' + vid + '_' + repr(uid) + '_' + date
+        output = open(outfile, 'w')
+        invalid_counter = 0
+        valid_counter = 0
+        counter = 0
+        for i in open(filename):
+            try:
+                content = json.loads(i, strict=False)
+                cvid = content['event']['id']
+                cuid = content['context']['user_id']
+                cdate = content['time'][:10]
+                if cvid == vid and cuid == uid and cdate == date:
+                    output.write(i)
+                    valid_counter += 1
+                counter += 1
+                if counter % 100000 == 0:
+                    print ('---%d log data---' % (counter))
+            except(ValueError, KeyError):
+                invalid_counter += 1
+                continue
+        print ('--------Total %d invalid data--------' % (invalid_counter))
+        print ('--------Get %d data--------' % (valid_counter))
+        output.close()
 
     def run_on_server(self):
         '''
@@ -887,15 +893,16 @@ class Filter(object):
         self.parse_forum_by_structure()
         self.parse_video_by_structure()
 
-        self.files_check()
+        if self.files_check():
+            print ('all pre-processing ready')
         # data preparation ends here
 
     def test(self):
         #self.parse_course_structure()
         #self.parse_forum_by_structure()
         #self.parse_problem_by_structure()
-        self.parse_video_by_structure()
-        #self.video_debug_filter('i4x-TsinghuaX-20740042X-video-a18cba64ddbe459a9897c070a3f04adf', 161855, '2015-10-28')
+        #self.parse_video_by_structure()
+        #self.debug_video_filter('i4x-TsinghuaX-20740042X-video-a18cba64ddbe459a9897c070a3f04adf', 161855, '2015-10-28')
         #self.debug_filter_by_event_type('../result/20740042X.video.sorted', 'load_video_error') 
 
 def main():
