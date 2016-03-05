@@ -1032,6 +1032,7 @@ class Filter(object):
         except(ValueError, KeyError):
             print ('Error loading forum connection')
 
+        print ('parsing forum')
         date_course_dict = dict()
         filename = self.result_dir + self.c_id + '.structured_forum'
         try:
@@ -1045,21 +1046,22 @@ class Filter(object):
                     self.__reparse_data_by_date_sub(update_log, date_course_dict)
                 for subthread in forum_dict[thread]['comment']:
                     for ccomment_log in forum_dict[thread]['comment'][subthread]['comment']:
-                        self.__parse_forum_by_structure_sub(ccomment_log, date_course_dict)
+                        self.__reparse_data_by_date_sub(ccomment_log, date_course_dict)
                     for cupdate_log in forum_dict[thread]['comment'][subthread]['update']:
-                        self.__parse_forum_by_structure_sub(cupdate_log, date_course_dict)
+                        self.__reparse_data_by_date_sub(cupdate_log, date_course_dict)
                     for cvote_log in forum_dict[thread]['comment'][subthread]['vote']:
-                        self.__parse_forum_by_structure_sub(cvote_log, date_course_dict)
+                        self.__reparse_data_by_date_sub(cvote_log, date_course_dict)
 
                     # get the comment itself
                     commentself = forum_dict[thread]['comment'][subthread]
                     del(commentself['comment'])
                     del(commentself['update'])
                     del(commentself['vote'])
-                    self.__parse_forum_by_structure_sub(commentself, date_course_dict)
+                    self.__reparse_data_by_date_sub(commentself, date_course_dict)
         except(ValueError, KeyError):
             print ("error reparse forum data")
 
+        print ('parsing video')
         # the connection between video id and course thread
         video_structure = dict()
         filename = self.result_dir + self.c_id + '.structured_video'
@@ -1095,6 +1097,7 @@ class Filter(object):
         except(ValueError, KeyError):
             print ('error reparse video data')
 
+        print ('parsing problem')
         filename = self.result_dir + self.c_id + '.structured_problem'
         problem_types = {'showanswer', 'problem_save', 'problem_check', 'problem_graded'}
         try:
