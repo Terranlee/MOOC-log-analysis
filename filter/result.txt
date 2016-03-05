@@ -1,3 +1,12 @@
+RESULT 2016/01/17
+--------Total 882090 video log--------
+--------Total 1851 forum log--------
+--------Total 15999 forum view log--------
+--------Total 46427 problem log--------
+--------Total 1822996 other log--------
+--------Total 168 invalid log--------
+
+
 ----------------------------------------------------------------------
 forum_data
 
