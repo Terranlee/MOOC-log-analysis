@@ -1,0 +1,243 @@
+----------------------------------------------------------------------
+forum_data
+
+56264000459f0835ce002165
+    73 unview, 432 view log data
+560fbadc459f0835ce0009b2
+    6 unview, 74 view log data
+55f65cac459f08e186000890
+    6 unview, 113 view log data
+55ffefb5f605abd877001248
+    12 unview, 128 view log data
+56680af5459f08f824005338
+    1 unview, 12 view log data
+5611026e459f08ea52000a66
+    0 unview, 42 view log data
+561e49f4f605abd87700269a
+    0 unview, 57 view log data
+566cf513459f08f8240055a7
+    0 unview, 8 view log data
+564b2e2a459f08ea52003f30
+    131 unview, 397 view log data
+55ef8396f605ab92790007cf
+    27 unview, 411 view log data
+55fa0705459f089798000f34
+    5 unview, 112 view log data
+560800ff459f08ba6e000633
+    6 unview, 101 view log data
+56846ba3459f08ea52006980
+    0 unview, 1 view log data
+563f25b0f605ab394b004494
+    6 unview, 39 view log data
+5606982df605abd87700172e
+    24 unview, 138 view log data
+561def43459f08ba6e0014b4
+    92 unview, 389 view log data
+560a835b459f08ea52000777            (活动最多，提供学堂在线ID)
+    255 unview, 1169 view log data
+55fa5e12f605ab9279000d79
+    3 unview, 99 view log data
+566fe1ecf605ab09da0004a5
+    1 unview, 10 view log data
+5600aae1459f08ea520000b6
+    3 unview, 61 view log data
+55fbd11bf605ab9279000eac
+    5 unview, 106 view log data
+5638ef13f605ab0522003b28
+    9 unview, 46 view log data
+560957d6459f08ba6e00071e
+    21 unview, 128 view log data
+55f292faf605ab0522000803
+    79 unview, 735 view log data
+561afc48459f08ba6e0011eb
+    9 unview, 63 view log data
+5660ed34f605ab9279006235
+    145 unview, 485 view log data
+5641b3de459f08ea52003524
+    43 unview, 329 view log data
+5627884df605abd87700344a
+    1 unview, 44 view log data
+5606b3c2459f08f824000533
+    6 unview, 86 view log data
+55f029edf605ab9279000815
+    13 unview, 389 view log data
+55ec265c459f08751b00001b
+    60 unview, 668 view log data
+560a8222f605ab927900191a
+    1 unview, 82 view log data
+56020ccff605ab05220011b5
+    58 unview, 373 view log data
+56397b89f605ab394b004067
+    12 unview, 58 view log data
+56284ac9459f08f8240021ae
+    14 unview, 91 view log data
+56163850f605abd877001fae
+    7 unview, 81 view log data
+55f8cbb0f605abd877000cba
+    0 unview, 1 view log data
+56763704459f08f824005b4d
+    2 unview, 10 view log data
+55f8cbfd459f08caf1000ab8
+    73 unview, 670 view log data
+55ec2090f605ab9279000721
+    0 unview, 227 view log data
+55f926ea459f0810c700000b
+    8 unview, 170 view log data
+5611f27d459f08f824000a97
+    0 unview, 54 view log data
+565e4581f605ab927900605e
+    1 unview, 4 view log data
+55f95503459f089798000ec3
+    3 unview, 89 view log data
+55ee48dd459f08751b000074
+    26 unview, 471 view log data
+56691fce459f08f8240053d3
+    8 unview, 139 view log data
+56284a27f605ab9279003366
+    11 unview, 53 view log data
+560d0c6b459f08f824000885
+    1 unview, 44 view log data
+55f66418f605abd877000abf
+    0 unview, 3 view log data
+5625ad5bf605ab0522002e56
+    34 unview, 311 view log data
+560bb8bef605ab92790019c2
+    0 unview, 71 view log data
+55f28151f605ab394b00082f
+    15 unview, 169 view log data
+55f96906459f08caf1000b66
+    4 unview, 117 view log data
+55fd14b5459f0897980011c7
+    3 unview, 84 view log data
+560ba040459f08f8240007e8
+    1 unview, 40 view log data
+560e533b459f0835ce000919
+    0 unview, 41 view log data
+55fd0792f605ab9279000f61
+    10 unview, 111 view log data
+56430d59459f0835ce00364b
+    3 unview, 31 view log data
+561faaaef605ab927900278b
+    7 unview, 95 view log data
+55f65c5df605ab9279000a5b
+    2 unview, 97 view log data
+56150b58f605ab0522001bdb
+    5 unview, 65 view log data
+565eacd1f605ab394b006292
+    2 unview, 20 view log data
+55f23462f605ab92790008c0
+    5 unview, 119 view log data
+56160aff459f08ea52000da2
+    28 unview, 177 view log data
+55f66b45f605ab9279000a72
+    6 unview, 169 view log data
+563625e6459f08ea52002d00
+    2 unview, 31 view log data
+55f6173ef605ab9279000a19
+    7 unview, 96 view log data
+560532ab459f08ea52000472
+    15 unview, 135 view log data
+567a1ae6459f08f824005d9c
+    1 unview, 5 view log data
+55f0f276f605ab9279000846
+    18 unview, 336 view log data
+562f2e11459f08ba6e002890
+    47 unview, 355 view log data
+56433e84459f08ea52003664
+    3 unview, 41 view log data
+56339ca6459f08ea52002b7d
+    4 unview, 31 view log data
+55ec1dc7459f08caf10005f3
+    90 unview, 634 view log data
+55ffa34ff605ab394b0010b3
+    7 unview, 71 view log data
+55fa14a2f605abd877000daf
+    11 unview, 188 view log data
+5602b302f605abd8770014cd
+    13 unview, 100 view log data
+5638979cf605ab0522003ada
+    66 unview, 372 view log data
+568487b9f605ab62e8001117
+    1 unview, 9 view log data
+564df5f8f605ab394b0053ac
+    6 unview, 60 view log data
+561c984df605ab394b0023e6
+    12 unview, 123 view log data
+55f78a14f605ab0522000a3a
+    4 unview, 101 view log data
+560ca3b2459f08ea52000875
+    48 unview, 410 view log data
+56541207459f08ea520045f7
+    95 unview, 406 view log data
+55f54772459f089798000b67
+    2 unview, 114 view log data
+5614a61ef605ab394b001db8
+    1 unview, 27 view log data
+560c7b67f605ab9279001a13
+    4 unview, 59 view log data
+
+
+----------------------------------------------------------------------
+question_data
+
+86a1b201a1954a9481f68a850dbb930d
+    02e5fe57c897420abfdde21c1154685b   4 logs
+Total 4 logs
+e3169990376745beb5ae6c2492207494
+    b3c04bb0033c47fdbd3637ba64245ca7   5687 logs
+Total 5687 logs
+62e212e2d42843efae2f2ef2c20da977
+    2f480dee72cc4e379b7fea4a4951ff22   12640 logs    (第二课的作业)
+Total 12640 logs
+cd76b64d6ebc458e8c1ef00952690fc0
+    d5ec937419c84304b0fcb7fe80674ce3   5766 logs
+Total 5766 logs
+9a69b6818212494f88e898edbe4994a4
+    3d81736169bd413dbedfa72ad0ef7a1d   3548 logs
+Total 3548 logs
+1559e154c4704acda3453dd7447306ad
+    6b163925503f4eb69a08def9f0ae2d6f   3730 logs
+Total 3730 logs
+02792c16d2154df0a5b5f363bc7107e7
+    cd117dc7878c41e1a8c2e02dce201b9a   3329 logs
+Total 3329 logs
+28d9999942c14583bc196ae0cf1bfec7
+    81f69dc9be3d499ea8ecf79375e36548   2876 logs
+Total 2876 logs
+7e32ee2ce4034e2abaf635bc8e8c9286
+    fcee75a3f5454c1ba555fccbb6383950   2721 logs
+Total 2721 logs
+4ff46470697c42f7bad8fd612aa283a4
+    6035f362e7dc4a84ad44ca16de4796fe   3810 logs
+Total 3810 logs
+159fef294c594a6cb2759981020522b8
+    bed6a7e299564785aa3490064fd04f65   886 logs    （最终的期末考试）
+Total 886 logs
+
+
+
+----------------------------------------------------------------------
+video_data
+
+86a1b201a1954a9481f68a850dbb930d
+    3977201.243402 sum time, 3694101.805114 overall time    （第一讲）
+e3169990376745beb5ae6c2492207494
+    1944326.666996 sum time, 1759825.995310 overall time
+4ff46470697c42f7bad8fd612aa283a4
+    1852173.191696 sum time, 1622180.656829 overall time
+1559e154c4704acda3453dd7447306ad
+    761799.163343 sum time, 697094.616958 overall time
+62e212e2d42843efae2f2ef2c20da977
+    2204841.055456 sum time, 2044761.800366 overall time
+9a69b6818212494f88e898edbe4994a4
+    933742.370825 sum time, 833462.749790 overall time
+cd76b64d6ebc458e8c1ef00952690fc0
+    1558030.927693 sum time, 1426706.752759 overall time
+7e32ee2ce4034e2abaf635bc8e8c9286
+    645774.343663 sum time, 602282.060224 overall time
+02792c16d2154df0a5b5f363bc7107e7
+    519476.681580 sum time, 476492.090467 overall time
+28d9999942c14583bc196ae0cf1bfec7
+    614028.678853 sum time, 567175.005804 overall time
+159fef294c594a6cb2759981020522b8                            （最后一讲）
+    383312.675847 sum time, 356566.176977 overall time
