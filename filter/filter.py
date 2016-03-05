@@ -6,6 +6,7 @@
 import os
 import re
 import json
+import time
 import gzip
 import urllib.request
 from bs4 import BeautifulSoup
@@ -758,6 +759,7 @@ class Filter(object):
                 single_index.add(id1)
                 course_mapping[id2] = li[it].string
             assert (len(single_index) == 1)
+            course_mapping[list(single_index)[0]] = index1
 
         outfile = self.result_dir + self.c_id + '.course_structure'
         output = open(outfile, 'w', encoding='utf-8')
@@ -866,6 +868,124 @@ class Filter(object):
         print ('--------Get %d data--------' % (valid_counter))
         output.close()
 
+    def show_time(self, earlist_activity_dict):
+        print ('--------Total %d times are captured--------' % (len(earlist_activity_dict)))
+        for i in earlist_activity_dict:
+            print (i)
+            print ('\t' + earlist_activity_dict[i])
+        print ('--------All times are shown--------')
+
+    def parse_forum_earlist_activity(self):
+        filename = self.result_dir + self.c_id + '.structured_forum'
+        earlist_activity_dict = dict()
+
+        event_types = ['view', 'vote', 'update'] # comment is another structure, parse it independently
+        event_subtypes = ['comment', 'vote', 'update']
+        try:
+            forum_dict = json.loads(open(filename).read(), strict=False)
+            for thread in forum_dict:
+                earlist_activity_dict[thread] = '2999-12-31'
+                for event_type in event_types:
+                    for log in forum_dict[thread][event_type]:
+                        log_time = log['time'][:10]
+                        if log_time < earlist_activity_dict[thread]:
+                            earlist_activity_dict[thread] = log_time
+                for comment_id in forum_dict[thread]['comment']:
+                    for subtype in event_subtypes:
+                        for log in forum_dict[thread]['comment'][comment_id][subtype]:
+                            log_time = log['time']
+                            if log_time < earlist_activity_dict[thread]:
+                                earlist_activity_dict[thread] = log_time
+        except(ValueError, KeyError):
+            print (log)
+
+        self.show_time(earlist_activity_dict)
+        return earlist_activity_dict
+
+    def parse_video_earlist_activity(self):
+        filename = self.result_dir + self.c_id + '.video_time'
+        earlist_activity_dict = dict()
+
+        try:
+            video_time_dict = json.loads(open(filename).read(), strict=False)
+            for video in video_time_dict:
+                earlist_activity_dict[video] = '2999-12-31'
+                for uid in video_time_dict[video]:
+                    for time in video_time_dict[video][uid]:
+                        if time < earlist_activity_dict[video]:
+                            earlist_activity_dict[video] = time
+        except(ValueError, KeyError):
+            print ('error at:' + video + ' ' + uid + ' ' + time)
+
+        filename = self.result_dir + self.c_id + '.structured_video'
+        earlist_activity_dict_thread = dict()
+        try:
+            video_structure = json.loads(open(filename).read(), strict=False)
+            for thread in video_structure:
+                earlist_activity_dict_thread[thread] = '2999-12-31'
+                for subthread in video_structure[thread]:
+                    for i in video_structure[thread][subthread]:
+                        if i in earlist_activity_dict and earlist_activity_dict[i] < earlist_activity_dict_thread[thread]:
+                            earlist_activity_dict_thread[thread] = earlist_activity_dict[i]
+        except(ValueError, KeyError):
+            print ('error at:' + thread + ' ' + subthread + ' ' + i)
+        self.show_time(earlist_activity_dict_thread)
+        return earlist_activity_dict_thread
+
+    def show_connection(self, course_mapping, connection):
+        print ('--------Total %d connection--------' % (len(connection)))
+        for i in connection:
+            print ('%s  ->  %s' % (i, course_mapping[connection[i]]))
+        print ('--------Connection end--------')
+
+    def connect_forum_lecture(self):
+        '''
+            connect forum activity to a certain lecture
+            using the timestamp of different forum activity
+        '''
+        forum_earlist_activity_dict = self.parse_forum_earlist_activity()
+        video_earlist_activity_dict = self.parse_video_earlist_activity()
+
+        for forum in forum_earlist_activity_dict:
+            forum_time = forum_earlist_activity_dict[forum]
+            forum_earlist_activity_dict[forum] = int(time.mktime(time.strptime(forum_time, '%Y-%m-%d')))
+        for video in video_earlist_activity_dict:
+            video_time = video_earlist_activity_dict[video]
+            video_earlist_activity_dict[video] = int(time.mktime(time.strptime(video_time, '%Y-%m-%d')))
+
+        filename = self.result_dir + self.c_id + '.course_structure'
+        file_handle = open(filename, 'r', encoding='utf-8')
+        try:
+            course_structure = json.loads(file_handle.readline(), strict=False)
+            course_mapping = json.loads(file_handle.readline(), strict=False)
+        except(ValueError, KeyError):
+            print ('error loading course structure')
+        file_handle.close()
+
+        # make the connection
+        connection = dict()
+        for forum in forum_earlist_activity_dict:
+            min_diff = 999999999999999
+            for video in video_earlist_activity_dict:
+                diff = forum_earlist_activity_dict[forum] - video_earlist_activity_dict[video]
+                if  diff >= 0 and diff < min_diff:
+                    min_diff = diff
+                    connection[forum] = video
+
+        self.show_connection(course_mapping, connection)
+
+        out_file = self.result_dir + self.c_id + '.forum_map'
+        output = open(out_file, 'w')
+        output.write(json.dumps(connection) + '\n')
+        output.close()
+
+    def reparse_data_by_date(self):
+        '''
+            parse data by the date of log
+        '''
+        self.connect_forum_lecture()
+        return
+
     def run_on_server(self):
         '''
             this function should run on the data server
@@ -898,12 +1018,13 @@ class Filter(object):
         # data preparation ends here
 
     def test(self):
-        #self.parse_course_structure()
+        self.parse_course_structure()
         #self.parse_forum_by_structure()
         #self.parse_problem_by_structure()
         #self.parse_video_by_structure()
         #self.debug_video_filter('i4x-TsinghuaX-20740042X-video-a18cba64ddbe459a9897c070a3f04adf', 161855, '2015-10-28')
         #self.debug_filter_by_event_type('../result/20740042X.video.sorted', 'load_video_error') 
+        self.reparse_data_by_date()
 
 def main():
     f = Filter(20150906, 20151231, '20740042X')
