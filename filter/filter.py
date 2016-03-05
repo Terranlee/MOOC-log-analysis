@@ -974,17 +974,143 @@ class Filter(object):
 
         self.show_connection(course_mapping, connection)
 
-        out_file = self.result_dir + self.c_id + '.forum_map'
+        out_file = self.result_dir + self.c_id + '.forum_map.auto'
         output = open(out_file, 'w')
         output.write(json.dumps(connection) + '\n')
         output.close()
+
+    def __get_forum_threads(self, referer):
+        forum_thread = referer[referer.rfind('/')+1:]
+        if forum_thread in self.forum_connection:
+            return self.forum_connection[forum_thread]
+        else:
+            return ''
+
+    def __get_problem_threads(self, referer):
+        pos1 = referer.rfind('/', 0, -1)
+        pos2 = referer.rfind('/', 0, pos1)
+        return referer[pos2+1:pos1]
+
+    def __reparse_data_by_date_sub(self, forum_log, date_course_dict):
+        # one day as a timeslice
+        time = forum_log['time'][:10]
+        # map the thread num to course thread referer
+        course_referer = self.__get_forum_threads(forum_log['referer'])
+        # do not map all forum activity to course thread
+        if course_referer == '':
+            return
+
+        if time not in date_course_dict:
+            date_course_dict[time] = dict()
+        if course_referer not in date_course_dict[time]:
+            date_course_dict[time][course_referer] = list()
+        date_course_dict[time][course_referer].append(forum_log)
+
+    def __reparse_problem_data_by_date_sub(self, cthread, problem_log, date_course_dict):
+        referer = problem_log['referer']
+        course_referer = self.__get_problem_threads(referer)
+        if course_referer != cthread:
+            print ('error reparse one date of problem')
+            return
+
+        time = problem_log['time'][:10]
+        if time not in date_course_dict:
+            date_course_dict[time] = dict()
+        if course_referer not in date_course_dict[time]:
+            date_course_dict[time][course_referer] = list()
+        date_course_dict[time][course_referer].append(problem_log)
 
     def reparse_data_by_date(self):
         '''
             parse data by the date of log
         '''
-        self.connect_forum_lecture()
-        return
+        # the connection between forum and courses
+        self.forum_connection = dict()
+        filename = self.result_dir + self.c_id + '.forum_map'
+        try:
+            self.forum_connection = json.loads(open(filename).read(), strict=False)
+        except(ValueError, KeyError):
+            print ('Error loading forum connection')
+
+        date_course_dict = dict()
+        filename = self.result_dir + self.c_id + '.structured_forum'
+        try:
+            forum_dict = json.loads(open(filename).read(), strict=False)
+            for thread in forum_dict:
+                for view_log in forum_dict[thread]['view']:
+                    self.__reparse_data_by_date_sub(view_log, date_course_dict)
+                for vote_log in forum_dict[thread]['vote']:
+                    self.__reparse_data_by_date_sub(vote_log, date_course_dict)
+                for update_log in forum_dict[thread]['update']:
+                    self.__reparse_data_by_date_sub(update_log, date_course_dict)
+                for subthread in forum_dict[thread]['comment']:
+                    for ccomment_log in forum_dict[thread]['comment'][subthread]['comment']:
+                        self.__parse_forum_by_structure_sub(ccomment_log, date_course_dict)
+                    for cupdate_log in forum_dict[thread]['comment'][subthread]['update']:
+                        self.__parse_forum_by_structure_sub(cupdate_log, date_course_dict)
+                    for cvote_log in forum_dict[thread]['comment'][subthread]['vote']:
+                        self.__parse_forum_by_structure_sub(cvote_log, date_course_dict)
+
+                    # get the comment itself
+                    commentself = forum_dict[thread]['comment'][subthread]
+                    del(commentself['comment'])
+                    del(commentself['update'])
+                    del(commentself['vote'])
+                    self.__parse_forum_by_structure_sub(commentself, date_course_dict)
+        except(ValueError, KeyError):
+            print ("error reparse forum data")
+
+        # the connection between video id and course thread
+        video_structure = dict()
+        filename = self.result_dir + self.c_id + '.structured_video'
+        try:
+            vid_structure = json.loads(open(filename).read(), strict=False)
+            for thread in vid_structure:
+                for subthread in vid_structure[thread]:
+                    for vid in vid_structure[thread][subthread]:
+                        video_structure[vid] = thread
+        except(ValueError, KeyError):
+            print ('error loading video structure')
+
+        filename = self.result_dir + self.c_id + '.video_time'
+        try:
+            video_user_date = json.loads(open(filename).read(), strict=False)
+            for vid in video_user_date:
+                for uid in video_user_date[vid]:
+                    for date in video_user_date[vid][uid]:
+                        course_referer = video_structure[vid]
+                        if date not in date_course_dict:
+                            date_course_dict[date] = dict()
+                        if course_referer not in date_course_dict[date]:
+                            date_course_dict[date][course_referer] = list()
+                        date_course_dict[date][course_referer].append(
+                            {
+                                'referer': '/' + course_referer,
+                                'context': {'user_id': uid},
+                                'time': date,
+                                'event_type': 'watch_video',
+                                'time1': video_user_date[vid][uid][date][0],
+                                'time2': video_user_date[vid][uid][date][1]
+                            })
+        except(ValueError, KeyError):
+            print ('error reparse video data')
+
+        filename = self.result_dir + self.c_id + '.structured_problem'
+        problem_types = {'showanswer', 'problem_save', 'problem_check', 'problem_graded'}
+        try:
+            problem_dict = json.loads(open(filename).read(), strict=False)
+            for course_thread in problem_dict:
+                for subthread in problem_dict[course_thread]:
+                    for ptype in problem_types:
+                        for problem_log in problem_dict[course_thread][subthread][ptype]:
+                            self.__reparse_problem_data_by_date_sub(course_thread, problem_log, date_course_dict)
+        except(ValueError, KeyError):
+            print ('error reparse problem data')
+
+        outfile = self.result_dir + self.c_id + '.date_course'
+        output = open(outfile, 'w')
+        output.write(json.dumps(date_course_dict) + '\n')
+        output.close()
 
     def run_on_server(self):
         '''
@@ -1018,7 +1144,7 @@ class Filter(object):
         # data preparation ends here
 
     def test(self):
-        self.parse_course_structure()
+        #self.parse_course_structure()
         #self.parse_forum_by_structure()
         #self.parse_problem_by_structure()
         #self.parse_video_by_structure()
@@ -1033,17 +1159,3 @@ def main():
 if __name__ == '__main__':
     main()
 
-'''
-    RESULT 2016/01/17
-    --------Total 882090 video log--------
-    --------Total 1851 forum log--------
-    --------Total 15999 forum view log--------
-    --------Total 46427 problem log--------
-    --------Total 1822996 other log--------
-    --------Total 168 invalid log--------
-'''
-
-'''
-    视频行为具体怎么分析
-    导学帖子，类似html的一个课程封面
-'''
