@@ -1115,6 +1115,17 @@ class Filter(object):
         output.write(json.dumps(date_course_dict) + '\n')
         output.close()
 
+        # check data
+        date_set = set()
+        thread_set = set()
+        for date in date_course_dict:
+            date_set.add(date)
+            for thread in date_course_dict[date]:
+                thread_set.add(thread)
+
+        print ('Total %d date are counted' % (len(date_set)))
+        print ('Total %d threads are counted' % (len(thread_set)))
+
     def run_on_server(self):
         '''
             this function should run on the data server
