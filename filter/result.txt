@@ -341,3 +341,13 @@ Connection, which forum belongs to which course
 56680af5459f08f824005338  ->  第十一课
 560957d6459f08ba6e00071e  ->  第三课
 --------Connection end--------
+
+
+
+
+--------Deep analysis in problem--------
+problem_check   13772.0  ->  26460.0
+problem_graded  13667.0  ->  28076.0
+showanswer  15805.0  ->  15805.0
+problem_save    1753.0  ->  3394.0
+
