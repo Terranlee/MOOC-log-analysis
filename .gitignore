@@ -1,3 +1,4 @@
 data/*.gz
 data/*.data
 result/*
+visual/stream/*.data
