@@ -48,7 +48,7 @@ class Analyzer(object):
             print (i + '\t' + repr(self.event_param[i]))
         print ('--------End of event types--------')
 
-    def calc_weight(self):
+    def calc_weight_from_count(self):
         for i in self.event_param:
             if i != 'watch_video':
                 self.event_param[i] = self.event_param['watch_video'] / self.event_param[i]
@@ -58,17 +58,23 @@ class Analyzer(object):
         print ('Show weight of different event')
         self.show_event_param()
 
-    def log_data_count(self):
+    def load_param(self):
+        filename = self.result_dir + self.c_id + '.data_count'
+        try:
+            self.event_param = json.loads(open(filename).read(), strict=False)
+        except(ValueError, KeyError):
+            print ('error loading data count file')
+    
+    def load_weight(self):
+        self.load_param()
+        self.calc_weight_from_count()
+
+    def calc_weight(self):
         '''
             count the number of different log event type
         '''
         if os.path.exists(self.result_dir + self.c_id + '.data_count'):
-            filename = self.result_dir + self.c_id + '.data_count'
-            try:
-                self.event_param = json.loads(open(filename).read(), strict=False)
-            except(ValueError, KeyError):
-                print ('error loading data count file')
-            self.calc_weight()
+            self.load_weight()
             return
 
         filename = self.result_dir + self.c_id + '.date_course'
@@ -109,7 +115,7 @@ class Analyzer(object):
         output.write(json.dumps(self.event_param) + '\n')
         output.close()
 
-        self.calc_weight()
+        self.calc_weight_from_count()
 
     def __build_match_from_zero(self, old_dict):
         dict_to_num = dict()
@@ -119,25 +125,41 @@ class Analyzer(object):
             counter += 1
         return dict_to_num
 
-    def __reverse_dict(self, old_dict):
-        new_dict = dict()
+    def __build_match_from_zero_include(self, old_dict, include_dict):
+        dict_to_num = dict()
+        counter = 0
         for i in old_dict:
-            new_dict[ old_dict[i] ] = i
-        return new_dict
+            if old_dict[i] not in include_dict:
+                continue
+            dict_to_num[i] = counter
+            counter += 1
+        return dict_to_num
+
+    def __reverse_dict_to_sorted_array(self, old_dict):
+        sorted_date = sorted(list(old_dict))
+        sorted_arr = list()
+        for i in sorted_date:
+            data_id = old_dict[i]
+            sorted_arr.append( [i, data_id] )
+        return sorted_arr
 
     def to_streamgraph_data(self, matrix, date_to_num, threads_to_num):
-        num_to_date = self.__reverse_dict(date_to_num)
-        num_to_threads = self.__reverse_dict(threads_to_num)
+        sorted_date_id = self.__reverse_dict_to_sorted_array(date_to_num)
+        sorted_thread_id = self.__reverse_dict_to_sorted_array(threads_to_num)
 
-        for i in num_to_threads:
-            num_to_threads[i] = self.course_structure[ num_to_threads[i] ]
+        for i in range(len(sorted_thread_id)):
+            sorted_thread_id[i][0] = self.course_mapping[ sorted_thread_id[i][0] ]
 
         outfile = self.result_dir + self.c_id + '.streamdata.csv'
         output = open(outfile, 'w', encoding='utf-8')
         output.write('key,value,date' + '\n')
-        for y in range(num_to_threads):
-            for x in range(num_to_date):
-                output.write('%s,%f,%s\n' % (num_to_threads[y], matrix[x][y], num_to_date[x]))
+        for thread in sorted_thread_id:
+            thread_name = thread[0]
+            thread_id = thread[1]
+            for date in sorted_date_id:
+                date_name = date[0]
+                date_id = date[1]
+                output.write('%s,%f,%s\n' % (thread_name, matrix[date_id][thread_id], date_name))
         output.close()
 
     def calc_stream_value(self):
@@ -155,7 +177,7 @@ class Analyzer(object):
         self.load_structure()
         num_of_threads = len(self.course_structure)
         num_of_date = len(date_course_dict)
-        threads_to_num = self.__build_match_from_zero(self.course_structure)
+        threads_to_num = self.__build_match_from_zero_include(self.course_mapping, self.course_structure)
         date_to_num = self.__build_match_from_zero(date_course_dict)
         print ('--------Total %d date and %d threads--------' % (num_of_date, num_of_threads))
 
@@ -189,7 +211,9 @@ class Analyzer(object):
         self.to_streamgraph_data(date_thread_value, date_to_num, threads_to_num)
 
     def test(self):
-        self.log_data_count()
+        #self.log_data_count()
+        self.load_weight()
+        self.calc_stream_value()
 
 def main():
     a = Analyzer('20740042X')
