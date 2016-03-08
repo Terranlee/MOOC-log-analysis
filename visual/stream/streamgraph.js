@@ -8,7 +8,8 @@ function chart(csvpath) {
     var compute = d3.interpolate(red_color, green_color);
     var color_linear = d3.scale.linear().range([0,1]);
 
-    var format = d3.time.format("%m/%d/%y");
+    //var format = d3.time.format("%m/%d/%y");
+    var format = d3.time.format("%y-%m-%d");
 
     var margin = {top: 20, right: 40, bottom: 30, left: 30};
     var width = document.body.clientWidth - margin.left - margin.right;

@@ -1,0 +1,55 @@
+{
+"name":"计算机文化基础",
+"children":
+[
+	{ 
+	  "name":"第一讲" , 
+  	  "children":
+  	  [
+	  	  	{"name":"视频", "value":1.0},
+	  	  	{"name":"讨论区", "value":1.0},
+	  	  	{"name":"作业", "value":1.0 }
+  	  ] 
+  	},
+  	
+	{ 
+		"name":"第二讲" , 
+		"children":
+		[
+			{
+			"name":"视频",
+			"children":
+			[
+				{"name":"第一视频", "value":1.0},
+				{"name":"第二视频", "value":4.0},
+				{"name":"第三视频", "value":1.0},
+				{"name":"第四视频", "value":1.0}
+			],
+			"value":5.0
+			},
+			{"name":"讨论区", "value":1.0},
+			{"name":"作业", "value":1.0}
+		] 
+	},
+	
+	{ 
+		"name":"第四讲",
+		"children":
+		[
+			{"name":"视频", "value":1.0},
+			{"name":"讨论区", "value":1.0},
+			{"name":"作业", "value":1.0}
+		] 
+	},
+	
+	{ 
+		"name":"第五讲" , 
+		"children":
+		[
+			{"name":"视频", "value":1.0},
+			{"name":"讨论区", "value":1.0},
+			{"name":"作业", "value":1.0}
+		]
+	}
+]
+}
