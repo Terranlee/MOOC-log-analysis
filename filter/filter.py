@@ -1164,7 +1164,7 @@ class Filter(object):
         #self.parse_video_by_structure()
         #self.debug_video_filter('i4x-TsinghuaX-20740042X-video-a18cba64ddbe459a9897c070a3f04adf', 161855, '2015-10-28')
         #self.debug_filter_by_event_type('../result/20740042X.video.sorted', 'load_video_error') 
-        self.reparse_data_by_date()
+        #self.reparse_data_by_date()
 
 def main():
     f = Filter(20150906, 20151231, '20740042X')

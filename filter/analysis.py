@@ -15,7 +15,7 @@ class Analyzer(object):
         self.c_id = cid
         # the max weight for each event
         # one event equals to at most max_weight minutes of video watch
-        self.max_weight = 100
+        self.max_weight = 10
         self.event_param = {
             'watch_video': 0.0,
             'view_forum': 0.0,
@@ -27,6 +27,19 @@ class Analyzer(object):
             'problem_save': 0.0,
             'problem_check': 0.0,
             'problem_graded': 0.0
+        }
+        self.forum_type = {
+            'view_forum',
+            'django_comment_client.base.views.vote_for_thread',
+            'django_comment_client.base.views.vote_for_comment', 
+            'django_comment_client.base.views.update_comment',
+            'django_comment_client.base.views.create_comment'
+        }
+        self.problem_type = {
+            'showanswer',
+            'problem_save',
+            'problem_check',
+            'problem_graded'
         }
     
     def load_structure(self):
@@ -66,6 +79,10 @@ class Analyzer(object):
             print ('error loading data count file')
     
     def load_weight(self):
+        '''
+            the parameter file only consists of the count of each kind of log data
+            you still need to re-calculate the weight, because the algorithm to calc weight is not fixed yet
+        '''
         self.load_param()
         self.calc_weight_from_count()
 
@@ -209,6 +226,119 @@ class Analyzer(object):
                     date_thread_value[x][y] += value * self.event_param[event_type]
 
         self.to_streamgraph_data(date_thread_value, date_to_num, threads_to_num)
+
+    def calc_pie_value_video(self, heriarchy):
+        '''
+            calculate the video value in this graph
+        '''
+        filename = self.result_dir + self.c_id + '.video_time'
+        try:
+            video_user_date = json.loads(open(filename).read(), strict=False)
+        except(ValueError, KeyError):
+            print ('loading video data failed')
+
+        filename = self.result_dir + self.c_id + '.structured_video'
+        try:
+            video_structure = json.loads(open(filename).read(), strict=False)
+        except(ValueError, KeyError):
+            print ('loading video structure failed')
+
+        # build reverse check table
+        i4x_to_thread = dict()
+        i4x_to_subthread = dict()
+        for thread in video_structure:
+            for subthread in video_structure[thread]:
+                for i4x in video_structure[thread][subthread]:
+                    i4x_to_thread[i4x] = thread
+                    i4x_to_subthread[i4x] = subthread
+
+        for i4x in video_user_date:
+            thread = i4x_to_thread[i4x]
+            subthread = i4x_to_subthread[i4x]
+            if thread not in heriarchy:
+                heriarchy[thread] = {'video' : dict(), 'problem' : dict(), 'forum' : dict()}
+            heriarchy[thread]['video'][subthread] = dict()
+            heriarchy[thread]['video'][subthread][i4x] = dict()
+            for user in video_user_date[i4x]:
+                if user not in heriarchy[thread]['video'][subthread][i4x]:
+                    heriarchy[thread]['video'][subthread][i4x][user] = 0.0
+                for date in video_user_date[i4x][user]:
+                    heriarchy[thread]['video'][subthread][i4x][user] += video_user_date[i4x][user][date][0]
+        print ('process video date finished')
+
+    def calc_pie_value_problem_forum(self, heriarchy):
+        filename = self.result_dir + self.c_id + '.date_course'
+        print ('loading data file')
+        try:
+            date_course_dict = json.loads(open(filename).read(), strict=False)
+        except(ValueError, KeyError):
+            print ('error loading all course data')
+        print ('loading succeed')
+
+        print ('processing problem and forum')
+        invalid_counter = 0
+        for date in date_course_dict:
+            for thread in date_course_dict[date]:
+                if thread not in heriarchy:
+                    heriarchy[thread] = {'video' : dict(), 'problem' : dict(), 'forum' : dict()}
+                for log in date_course_dict[date][thread]:
+                    event_type = log['event_type']
+                    # watch video will be processed later
+                    if event_type == 'watch_video':
+                        continue
+                    if log['context']['user_id'] == '':
+                        invalid_counter += 1
+                        continue
+
+                    # calculate value, consider right and wrong of problem
+                    value = 0
+                    if event_type == 'problem_save' or event_type == 'problem_graded':
+                        event = log['event']
+                        value = event.count('&')
+                        if value == 0:
+                            value == 1
+                    elif event_type == 'problem_check':
+                        event = log['event']
+                        value = len(event(submission))
+                        value += event['grade']
+                    else:
+                        value = 1
+
+                    # change to top type
+                    top_type = ''
+                    if event_type in self.problem_type:
+                        top_type = 'problem'
+                    elif event_type in self.forum_type:
+                        top_type = 'forum'
+                    if top_type == '':
+                        assert(False);
+
+                    # consider user in this section
+                    uid = log['context']['user_id']
+                    if uid not in heriarchy[thread][top_type]:
+                        heriarchy[thread][top_type][uid] = 0.0
+                    heriarchy[thread][top_type][uid] += value * self.event_param[event_type]
+
+        print ('process problem forum succeed')
+        print ('Total %d invalid counter' % (invalid_counter))
+
+    def calc_user_sorted(self, heriarchy):
+        print ('sorting results')
+        for thread in heriarchy:
+            for top_type in heriarchy[thread] and top_type in {'problem', 'forum'}:
+                heriarchy[thread][top_type] = sorted(heriarchy[thread])
+        for thread in heriarchy:
+            for top_type in heriarchy[thread] and top_type == 'video':
+                heriarchy[thread][top_type]
+
+    def calc_pie_graph_value(self):
+        '''
+            generate the data file needed by the pie graph
+        '''
+        heriarchy = dict()
+        self.calc_pie_value_problem_forum(heriarchy)
+        self.calc_pie_value_video(heriarchy)
+        self.calc_user_sorted(heriarchy)
 
     def test(self):
         #self.log_data_count()
