@@ -9,7 +9,7 @@
 
 </style>
 <body>
-<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="d3.v3.min.js"></script>
 <script>
 
 var width = 450,
@@ -22,7 +22,7 @@ var svg = d3.select("body").append("svg")
             .attr("width", width)
             .attr("height", height)
             .append("g")
-            .attr("transform", "translate(" + radius + "," + radius + ")");
+            .attr("transform", "translate(" + (radius) + "," + (radius) + ")");
 
 // layout.partition()生成分区图
 // 可以类似树形结构那样横向地分割，也可以做成圆形的分割
@@ -61,10 +61,27 @@ d3.json("city_tree.json", function(error, root) {
     // nodes是一批零散的节点，并不包含partition的结构信息，而且已经包含了dx，dy之类的数据了
     console.log(nodes);
 
+    // 指向每一个弧形的时候开始更新，生成当前区域中最活跃的人
+    var TopStudents = svg.append("text")
+        .attr("font-size",20)
+        .attr("font-family","simsun")
+        .attr("x", "0")
+        //.attr("transform", "translate(" + (radius) + "," + (radius) + ")")
+        
+    TopStudents.selectAll("tspan")
+        .data(nodes[0].top)
+        .enter()
+        .append("tspan")
+        .attr("dy", "1em")
+        .attr("x", TopStudents.attr("x"))
+        .text(function(d){
+            return d;
+        });
+
     var arcs = svg.selectAll("g")
                   .data(nodes)
                   .enter().append("g");
-    
+
     arcs.append("path")
         // 最里层的那个是隐藏的，空白了
         .attr("display", function(d) { return d.depth ? null : "none"; }) // hide inner ring
@@ -72,9 +89,16 @@ d3.json("city_tree.json", function(error, root) {
         .style("stroke", "#fff")
         // 颜色，如果是最外层，就和里面一层的颜色一样
         .style("fill", function(d) { return color((d.children ? d : d.parent).name); })
-        .on("mouseover",function(d){
+        .on("mouseover",function(d, i){
             d3.select(this)
                 .style("fill","yellow");
+            TopStudents.selectAll("tspan")
+                .data(nodes[i].top)
+                .attr("dy","1em")
+                .attr("x", TopStudents.attr("x"))
+                .text(function(d){
+                    return d;
+                });
         })
         .on("mouseout",function(d){
             d3.select(this)
@@ -106,8 +130,12 @@ d3.json("city_tree.json", function(error, root) {
                 return  "translate(" + arc.centroid(d) + ")" +
                         "rotate(" + r + ")";
         }) 
-        .text(function(d) { return d.name; });  
-  
+        .text(function(d, i) { 
+            if(i == 0)
+                return "";
+            else 
+                return d.name;
+        });
 });
 
 </script>
