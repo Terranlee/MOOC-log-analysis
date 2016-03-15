@@ -15,7 +15,7 @@ class Analyzer(object):
         self.c_id = cid
         # the max weight for each event
         # one event equals to at most max_weight minutes of video watch
-        self.max_weight = 10
+        self.max_weight = 200
         self.event_param = {
             'watch_video': 0.0,
             'view_forum': 0.0,
@@ -124,7 +124,7 @@ class Analyzer(object):
                         self.event_param[event_type] += cc
                     else:
                         self.event_param[event_type] += 1
-        self.event_param['watch_video'] /= 60   # count in minute
+        self.event_param['watch_video']
         self.show_event_param()
 
         outfile = self.result_dir + self.c_id + '.data_count'
@@ -224,7 +224,6 @@ class Analyzer(object):
                     else:
                         value = 1
                     date_thread_value[x][y] += value * self.event_param[event_type]
-
         self.to_streamgraph_data(date_thread_value, date_to_num, threads_to_num)
 
     def calc_pie_value_video(self, heriarchy):
@@ -326,11 +325,15 @@ class Analyzer(object):
         print ('sorting results')
         for thread in heriarchy:
             for top_type in heriarchy[thread] and top_type in {'problem', 'forum'}:
-                heriarchy[thread][top_type] = sorted(heriarchy[thread])
+                heriarchy[thread][top_type] = sorted(heriarchy[thread][top_type].items(),
+                                                key=lambda asd:asd[1], reverse=True)
         for thread in heriarchy:
             for top_type in heriarchy[thread] and top_type == 'video':
-                heriarchy[thread][top_type]
-
+                for subthread in heriarchy[thread][top_type]:
+                    for i4x in heriarchy[thread][top_type][subthread]:
+                        heriarchy[thread][top_type][subthread][i4x] = sorted(heriarchy[thread][top_type][subthread][i4x].items(),
+                                                key=lambda asd:asd[1], reverse=True)
+        
     def calc_pie_graph_value(self):
         '''
             generate the data file needed by the pie graph
