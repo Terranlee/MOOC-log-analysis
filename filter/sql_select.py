@@ -34,10 +34,14 @@ class ProfileDB(object):
             print ('error connecting to database')
             print (e)
 
+        print ('connected to database')
+
         try:
             cursor = conn.cursor()
-            sql_command = 'select id, user_id, name, nickname from auth_userprofile where user_id = %d'
-            n = cursor.executemany(sql_command, uids)
+            sql_command = 'select id, user_id, name, nickname from auth_userprofile where user_id in %s' \
+                % repr((tuple(uids)))
+            print ('executing')
+            n = cursor.execute(sql_command)
             print ('get %d results' % (n))
             for row in cursor.fetchall():
                 result.append(row)
@@ -48,7 +52,10 @@ class ProfileDB(object):
             print ('error operating database')
             print (e)
 
-        return result
+        filename = self.result_dir + self.c_id + '.allnames'
+        output = open(filename, 'w')
+        output.write(json.dumps(result, ensure_ascii=False).encode('utf-8') + '\n')
+        output.close()
 
     def select_profile_version3(self, uids):
         import pymysql
@@ -61,10 +68,14 @@ class ProfileDB(object):
             print ('error connecting to database')
             print (e)
 
+        print ('connected to database')
+
         try:
             cur = conn.cursor()
-            sql_command = 'select id, user_id, name, nickname from auth_userprofile where user_id = %d'
-            n = cursor.executemany(sql_command, uids)
+            sql_command = 'select id, user_id, name, nickname from auth_userprofile where user_id in %s' \
+                % repr((tuple(uids)))
+            print ('executing')
+            n = cursor.execute(sql_command)
             print ('get %d results' % (n))
             for row in cursor.fetchall():
                 result.append(row)
@@ -74,7 +85,11 @@ class ProfileDB(object):
         except Exception as e:
             print ('error operating database')
             print (e)
-        return result
+
+        filename = self.result_dir + self.c_id + '.allnames'
+        output = open(filename, 'w', encoding='utf-8')
+        output.write(json.dumps(result, ensure_ascii=False) + '\n')
+        output.close()
 
     def load_uids(self):
         filename = self.result_dir + self.c_id + '.namemap'
@@ -82,20 +97,18 @@ class ProfileDB(object):
             mapping = json.loads(open(filename).read(), strict=False)
         except(ValueError, KeyError):
             print ('error loading data file')
-        uids = [for i in mapping]
+        uids = list()
+        for i in mapping:
+            uids.append(int(i))
+        print ('get %d uids' % (len(uids)))
         return uids
 
     def select_profile(self, uids):
         version = self.get_version()
         if version[0] == '2':
-            result = self.select_profile_version2(uids)
+            self.select_profile_version2(uids)
         elif version[0] == '3':
-            result = self.select_profile_version3(uids)
-
-        filename = self.result_dir + self.c_id + '.allnames'
-        output = open(filename, 'w', encoding='utf-8')
-        output.write(json.dumps(result, ensure_ascii=False) + '\n')
-        output.close()
+            self.select_profile_version3(uids)
 
 def main():
     db = ProfileDB('20740042X')
