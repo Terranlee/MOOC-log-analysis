@@ -359,12 +359,14 @@ class Analyzer(object):
             subthread = i4x_to_subthread[i4x]
             if thread not in heriarchy:
                 heriarchy[thread] = {'video' : dict(), 'problem' : dict(), 'forum' : dict()}
-            heriarchy[thread]['video'][subthread] = dict()
+            if subthread not in heriarchy[thread]['video']:
+                heriarchy[thread]['video'][subthread] = dict()
             for user in video_user_date[i4x]:
                 if user not in heriarchy[thread]['video'][subthread]:
                     heriarchy[thread]['video'][subthread][user] = 0.0
                 for date in video_user_date[i4x][user]:
                     heriarchy[thread]['video'][subthread][user] += video_user_date[i4x][user][date][0]
+
         print ('process video date finished')
 
     def calc_pie_value_problem_forum(self, heriarchy):
@@ -378,7 +380,6 @@ class Analyzer(object):
 
         print ('processing problem and forum')
         invalid_counter = 0
-        problem_value_types = {'problem_save', 'problem_graded', 'problem_check'}
 
         for date in date_course_dict:
             for thread in date_course_dict[date]:
@@ -393,7 +394,7 @@ class Analyzer(object):
                         invalid_counter += 1
                         continue
 
-                    # calculate value, consider right and wrong of problem
+                    # calculate value, consider right and wrong for problem log
                     value = 0
                     if event_type in self.problem_type:
                         value = self.__parse_problem_log_count(log)
@@ -421,15 +422,15 @@ class Analyzer(object):
     def calc_pie_value_user_sorted(self, heriarchy):
         print ('sorting results')
         for thread in heriarchy:
-            for top_type in heriarchy[thread] and top_type in {'problem', 'forum'}:
-                heriarchy[thread][top_type] = sorted(heriarchy[thread][top_type].items(),
+            for top_type in heriarchy[thread]:
+                if top_type in {'problem', 'forum'}:
+                    heriarchy[thread][top_type] = sorted(heriarchy[thread][top_type].items(),
                                                 key=lambda asd:asd[1], reverse=True)
-        for thread in heriarchy:
-            for top_type in heriarchy[thread] and top_type == 'video':
-                for subthread in heriarchy[thread][top_type]:
-                    heriarchy[thread][top_type][subthread] = sorted(heriarchy[thread][top_type][subthread].items(),
+                elif top_type == 'video':
+                    for subthread in heriarchy[thread][top_type]:
+                        heriarchy[thread][top_type][subthread] = sorted(heriarchy[thread][top_type][subthread].items(),
                                                                 key=lambda asd:asd[1], reverse=True)
-    
+        
     def merge_dict(self, all_value, old_list):
         for i in old_list:
             if i[0] not in all_value:
@@ -437,72 +438,85 @@ class Analyzer(object):
             all_value[i[0]] += i[1]
 
     def calc_pie_value_top(self, heriarchy):
+        print ('calculate top student in each level')
         # the leaf level
-        for thread in heriarchy:
-            for top_type in heriarchy[thread] and top_type in {'problem', 'forum'}:
-                value_sum = 0.0
-                heriarchy[thread][top_type] = {'top': list(), 'value': 0.0, 'user': heriarchy[thread][top_type]}
-                for item in heriarchy[thread][top_type]['user']:
-                    value_sum += item[1]
-                heriarchy[thread][top_type]['value'] = value_sum
-                for i in range(self.max_top_student):
-                    heriarchy[thread][top_type]['top'].append(heriarchy[thread][top_type]['user'][i][0])
+        print ('leaf level')
 
         for thread in heriarchy:
-            for top_type in heriarchy[thread] and top_type == 'video':
-                for subthread in heriarchy[thread][top_type]:
-                    heriarchy[thread][top_type][subthread] = {'top' : list(), 'value': 0.0, 'user': heriarchy[thread][top_type][subthread]}
+            for top_type in heriarchy[thread]:
+                if top_type in {'problem', 'forum'}:
                     value_sum = 0.0
-                    for item in heriarchy[thread][top_type][subthread]['user']:
+                    heriarchy[thread][top_type] = {'top': list(), 'value': 0.0, 'user': heriarchy[thread][top_type]}
+                    for item in heriarchy[thread][top_type]['user']:
                         value_sum += item[1]
-                    heriarchy[thread][top_type][subthread]['value'] = value_sum
-                    for i in range(self.max_top_student):
-                        heriarchy[thread][top_type][subthread]['top'].append(heriarchy[thread][top_type][subthread]['user'][i][0])
-
-        # inner level
+                    heriarchy[thread][top_type]['value'] = value_sum
+                    for i in range( min(self.max_top_student, len(heriarchy[thread][top_type]['user'])) ):
+                        heriarchy[thread][top_type]['top'].append( heriarchy[thread][top_type]['user'][i][0] )
+                elif top_type == 'video':
+                    for subthread in heriarchy[thread][top_type]:
+                        heriarchy[thread][top_type][subthread] = {'top' : list(), 'value': 0.0, 'user': heriarchy[thread][top_type][subthread]}
+                        value_sum = 0.0
+                        for item in heriarchy[thread][top_type][subthread]['user']:
+                            value_sum += item[1]
+                        heriarchy[thread][top_type][subthread]['value'] = value_sum
+                        for i in range( min(self.max_top_student, len(heriarchy[thread][top_type][subthread]['user'])) ):
+                            heriarchy[thread][top_type][subthread]['top'].append( heriarchy[thread][top_type][subthread]['user'][i][0] )
+        # inner level, for video only
+        print ('inner level for video')
         for thread in heriarchy:
-            for top_type in heriarchy[thread] and top_type == 'video':
-                heriarchy[thread][top_type]['top'] = list()
-                all_value = dict()
-                for subthread in heriarchy[thread][top_type]:
-                    self.merge_dict(all_value, heriarchy[thread][top_type][subthread]['user'])
-                sorted_ans = sorted(all_value.items(), key=lambda asd:asd[1], reverse=True)
-                for i in range(self.max_top_student):
-                    heriarchy[thread][top_type]['top'].append(sorted_ans[i][0])
-                heriarchy[thread][top_type]['user'] = sorted_ans
-                heriarchy[thread][top_type]['value'] = 0.0  # this does not matter, it will calculate from leaf node
+            for top_type in heriarchy[thread]:
+                if top_type == 'video':
+                    all_value = dict()
+                    for subthread in heriarchy[thread][top_type]:
+                        self.merge_dict(all_value, heriarchy[thread][top_type][subthread]['user'])
+                    sorted_ans = sorted(all_value.items(), key=lambda asd:asd[1], reverse=True)
+                    heriarchy[thread][top_type]['user'] = sorted_ans
+                    heriarchy[thread][top_type]['value'] = 0.0  # this does not matter, it will calculate from leaf node
+                    heriarchy[thread][top_type]['top'] = list()
+                    for i in range( min(self.max_top_student, len(sorted_ans)) ):
+                        heriarchy[thread][top_type]['top'].append(sorted_ans[i][0])
 
-        # thread level
+        # thread level, thread level
+        print ('thread level')
         for thread in heriarchy:
-            heriarchy[thread]['top'] = list()
             all_value = dict()
             for top_type in heriarchy[thread]:
                 self.merge_dict(all_value, heriarchy[thread][top_type]['user'])
             sorted_ans = sorted(all_value.items(), key=lambda asd:asd[1], reverse=True)
-            for i in range(self.max_top_student):
+            heriarchy[thread]['top'] = list()
+            for i in range(min(self.max_top_student, len(sorted_ans))):
                 heriarchy[thread]['top'].append(sorted_ans[i][0])
 
     def to_pie_graph_data(self, heriarchy):
         tree = dict()
         tree['name'] = repr(self.c_id)
+        tree['top'] = list()
         tree['children'] = list()
         for thread in heriarchy:
+            if thread in {'top', 'user', 'value'}:
+                continue
             thread_dict = {'name': thread, 'children': list(), 
                             'top': heriarchy[thread]['top'], 'value': 0.0}
             for top_type in heriarchy[thread]:
+                if top_type in {'top', 'user', 'value'}:
+                    continue
+
                 top_type_dict = {'name': top_type, 'children': list(), 
                                 'top': heriarchy[thread][top_type]['top'], 'value': heriarchy[thread][top_type]['value']}
                 if top_type == 'video':
                     for subthread in heriarchy[thread][top_type]:
+                        if subthread in {'top', 'user', 'value'}:
+                            continue
                         subthread_dict = {'name': subthread, 'value': heriarchy[thread][top_type][subthread]['value'],
                                             'top': heriarchy[thread][top_type][subthread]['top'] }
                         top_type_dict['children'].append(subthread_dict)
-                thread_dict['children'].append(top_type_dict)
+                thread_dict['children'].append( top_type_dict )
             tree['children'].append( thread_dict )
 
-        outfile = self.result_dir + self.c_id + '.pie_graph'
+        outfile = self.result_dir + self.c_id + '.pie_graph.json'
         output = open(outfile, 'w', encoding='utf-8')
-        output.write(json.dumps(tree) + '\n')
+        # write json tree with structure
+        output.write(json.dumps(tree, indent=4) + '\n')
         output.close()
 
     def calc_pie_graph_value(self):
@@ -519,7 +533,8 @@ class Analyzer(object):
     def test(self):
         #self.log_data_count()
         self.load_weight()
-        self.calc_stream_value()
+        #self.calc_stream_value()
+        self.calc_pie_graph_value()
         #self.uid_time_distribution(date_course_dict)
 
 def main():
