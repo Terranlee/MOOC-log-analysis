@@ -26,19 +26,28 @@ p {
 <script src="d3.v2.js"></script>
 <script src="streamgraph.js"></script>
 
+<script>
+var filename = "20740042X.streamdata.csv";
+var current_type = 0;
+
+function change_type() {
+  if(current_type == 0){
+    current_type = 1;
+    all_clear();
+    chart_splitstream(filename);
+  }
+  else if(current_type == 1){
+    current_type = 0;
+    all_clear();
+    chart_allstream(filename);
+  }
+}
+</script>
+<button type="button" onclick="change_type()">Change Type</button>
+
 <div class="chart">
 </div>
 
 <script>
-//chart_allstream("20740042X.streamdata.csv");
-chart_splitstream("20740042X.streamdata.csv");
+chart_allstream(filename);
 </script>
-
-<!-- 
-    （1）扇形图的动画效果
-    （2）显示人的名字
-    （3）主页上是否有log数据，没有登录的是否能够记录，老师想要更新课程简介页面
-    （4）权值是否可以分为两套，全局的和个人的
-    （5）是否可以通过可视化进行学生的评价
-    
- -->

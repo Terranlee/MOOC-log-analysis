@@ -71,6 +71,12 @@ var nest = d3.nest()
     // 之后就得到数组的第一个维度了，相同课程ID的那些entry形成第二个维度
     // key函数可以连续调用，就可以生成更高维度的数组了
 
+function all_clear(){
+    d3.select(".chart").remove();
+    d3.select("body")
+        .append("div")
+        .attr("class", "chart");
+}
 
 function chart_allstream(csvpath) {
     // 全局最大值以及只显示某一stream时的局部最大值
@@ -86,6 +92,8 @@ function chart_allstream(csvpath) {
     
     var datearray = [];
 
+    var sumvalue = Array();
+
     // tooltip就是左上角显示那个class1,class2的地方
     var tooltip = d3.select("body")
         .append("div")
@@ -94,7 +102,7 @@ function chart_allstream(csvpath) {
         .style("z-index", "20")
         .style("visibility", "hidden")
         .style("top", "30px")
-        .style("left", "55px");
+        .style("left", "25px");
         
     // d3.scale是创建比例尺，相当于是一个映射关系
     // domain是定义域，range是值域，默认为[0,1]
@@ -182,8 +190,39 @@ function chart_allstream(csvpath) {
                 threshold_sort(data);
             }
         }
+        // calculate the sum value of each date
+        var counter = 0;
+        var date_to_count = Array();
+        data.forEach(function(d) {
+            if(!date_to_count[d.date]){
+                date_to_count[d.date] = counter;
+                counter += 1;
+            }
+        });
+        sumvalue = [];
+        for(var i=0; i<counter; i++)
+            sumvalue.push(0);
+        data.forEach(function(d) {
+            var which = date_to_count[d.date];
+            sumvalue[which] += d.value;
+        });
+        for(var i=0; i<sumvalue.length; i++)
+            sumvalue[i] = Math.floor(sumvalue[i]);
     }
     
+    function all_information_date(date, key, value, sum){
+        // get all the information needed for this date and key
+        var month = parseInt(date / 100);
+        var day = parseInt(date % 100);
+        return "<p> On " + month + "-" + day + "<br>" + key + ": " + value + "<br>Sum: " + sum + "</p>";
+    }
+
+    function part_information_date(date, key, value){
+        var month = parseInt(date / 100);
+        var day = parseInt(date % 100);
+        return "<p> On " + month + "-" + day + "<br>" + key + ": " + value + "</p>";
+    }
+
     function clear(){
         svg.selectAll(".layer").remove();
         d3.select(".chart").select(".remove").remove();
@@ -207,7 +246,6 @@ function chart_allstream(csvpath) {
     function paint(data){
         // 对于每一个data的object进行如下的处理，时间的格式化
         data.forEach(function(d) {
-            d.date = format.parse(d.date);
             d.value = +d.value;
         });
         // 按照定义好的nest，将原始的一维data转换为二维data，然后传递给stack
@@ -278,8 +316,13 @@ function chart_allstream(csvpath) {
                     // classed用来选定或者删除某一个css的class，true的话就相当于添加一个class=hover
                     .classed("hover", true)
                     .attr("stroke", strokecolor)    // stroke width指的是包围在一个stream周围的，有一圈加粗的
-                    .attr("stroke-width", "0.5px"), 
-                    tooltip.html( "<p>" + d.key + "<br>" + pro + "</p>" ).style("visibility", "visible");
+                    .attr("stroke-width", "0.5px");
+                    var content;
+                    if(is_all)
+                        content = all_information_date(invertedx, d.key, pro, sumvalue[mousedate]);
+                    else
+                        content = part_information_date(invertedx, d.key, pro);
+                    tooltip.html( content ).style("visibility", "visible");
                 })
             .on("mouseout", function(d, i) {
                 svg.selectAll(".layer")
@@ -341,6 +384,9 @@ function chart_allstream(csvpath) {
     function stream_filter(key){
         if(key == ""){
             d3.csv(csvpath, function(data) {
+                data.forEach(function(d){
+                    d.date = format.parse(d.date);
+                });
                 allstream_preprocess(data, true);
                 // update y function here
                 y = d3.scale.linear().range([height - blank_total, 0]);
@@ -365,6 +411,9 @@ function chart_allstream(csvpath) {
                 // update y function here
                 var max_height = (height - blank_total) * local_maxval / global_maxval;
                 y = d3.scale.linear().range([height - blank_total, height - blank_total - max_height]);
+                alldata.forEach(function(d){
+                    d.date = format.parse(d.date);
+                });
                 paint(alldata);
             });
         }
@@ -450,7 +499,7 @@ function chart_splitstream(csvpath) {
 
         // 绘制标签
         var label_name = "lable" + index;
-        var tooltip = d3.select("body")
+        var tooltip = d3.select(".chart")
             .append("div")
             .attr("class", label_name)
             .style("position", "absolute")
@@ -461,7 +510,7 @@ function chart_splitstream(csvpath) {
 
         // 画竖线
         var line_name = "line" + index;
-        var vertical = d3.select("body")
+        var vertical = d3.select(".chart")
             .append("div")
             .attr("class", line_name)
             .style("position", "absolute")
