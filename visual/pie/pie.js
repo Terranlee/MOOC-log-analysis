@@ -1,9 +1,18 @@
 
-function circle(treepath){
-    var width = 450,
-    height = 450,
+function pie(treepath){
+	var zoom_in = 3;
+	var zoom_out = 1 / zoom_in;
+	var zoom_status = 0;
+	// zoom_thread_name is only useful when zoom_status = 1
+	var zoom_thread_name = "";
+	
+    var width = 800,
+    height = 800,
     radius =  Math.min(width, height) / 2 ,
     color = d3.scale.category20();  // 自动生成20中颜色的预设，似乎可以把一个字符串映射成某一种颜色
+
+    // 
+    ordered_name = Array();
 
     // 创建了一块画布，把画布的中心移动到了radius的位置
     var svg = d3.select("body").append("svg")
@@ -30,20 +39,54 @@ function circle(treepath){
         .endAngle(function(d) { return d.x + d.dx; })
         .innerRadius(function(d) { return Math.sqrt(d.y); })
         .outerRadius(function(d) { return Math.sqrt(d.y + d.dy); });
+	
+	function clear() {
+		svg.selectAll("g").remove();
+		svg.selectAll("text").remove();
+	}
+	
+    function get_order(root_data){
+        var counter = 0;
+        for(var i=0; i<root_data.children.length; i++){
+            ordered_name[ root_data.children[i].name ] = counter;
+            counter += 1;
+        }
+    }
 
-    d3.json("city_tree.json", function(error, root) {
-        if(error)
-            console.log(error);
-    
-        // root数据的结构是一个name -> children的字典结构
+	function zoomValue(root, thread_name, zoom_value) {
+		for(var i=0; i<root.children.length; i++){
+			if(root.children[i].name == thread_name){
+				root.children[i].value *= zoom_value;
+				
+				var level1 = root.children[i];
+				for(var i=0; i<level1.children.length; i++){
+					level1.children[i].value *= zoom_value;
+					var level2 = level1.children[i];
+					if(level2.children){
+						for(var i=0; i<level2.children.length; i++){
+							level2.children[i].value *= zoom_value;
+						}
+					}
+				}
+				break;
+			}
+		}
+	}
+	
+	function paint(root) {
+        get_order(root);
+        for(var i=0; i<20; i++)
+            console.log(color(i));
+
+		// root数据的结构是一个name -> children的字典结构
         // 虽然最后没有用到links，但是links这一步转换是必不可少的，应该是在nodes里面添加了一些别的数据
         // 增加了有d.depth（是在哪一层）d.x, x.y（坐标起点）d.dx, d.dy（两个方向上的长度）
         // 还有d.children（指向儿子节点的指针），d.parent（指向父节点的指针）
         // 最外层节点没有children，最内层节点没有parent
         var nodes = partition.nodes(root);
         var links = partition.links(nodes);
-    
-        // nodes是一批零散的节点，并不包含partition的结构信息，而且已经包含了dx，dy之类的数据了
+		
+		// nodes是一批零散的节点，并不包含partition的结构信息，而且已经包含了dx，dy之类的数据了
         //console.log(nodes);
     
         // 指向每一个弧形的时候开始更新，生成当前区域中最活跃的人
@@ -55,7 +98,7 @@ function circle(treepath){
         
         // 初始化最活跃学生群体        
         TopStudents.selectAll("tspan")
-            .data(nodes[0].top)
+            .data(nodes[nodes.length-1].top)
             .enter()
             .append("tspan")
             .attr("dy", "1em")
@@ -63,8 +106,8 @@ function circle(treepath){
             .text(function(d){
                 return d;
             });
-    
-        var arcs = svg.selectAll("g")
+		
+		var arcs = svg.selectAll("g")
             .data(nodes)
             .enter().append("g");
     
@@ -74,7 +117,15 @@ function circle(treepath){
             .attr("d", arc)     // 用之前定义的那个arc来画圆弧
             .style("stroke", "#fff")
             // 颜色，如果是最外层，就和里面一层的颜色一样
-            .style("fill", function(d) { return color((d.children ? d : d.parent).name); })
+            .style("fill", function(d) { 
+                if(d.depth == 1)
+                    return color(ordered_name[d.name]);
+                else if(d.depth == 2)
+                    return color(d.parent.name + 'hash'); 
+				else if(d.depth == 3)
+					return color(d.parent.name + d.parent.parent.name);
+                return color(d.name); }
+            )
             .on("mouseover",function(d, i){
                 d3.select(this)
                     .style("fill","yellow");
@@ -87,16 +138,55 @@ function circle(treepath){
                         return d;
                     });
             })
+			.on("dblclick", function(d, i){
+				if(d.depth == 0)
+					return;
+				
+				// trace to the thread level
+				var name = "";
+				if(d.depth == 3)
+					name = d.parent.parent.name;
+				else if(d.depth == 2)
+					name = d.parent.name;
+				else if(d.depth == 1)
+					name = d.name;
+				
+				// decide zoom in or zoom out
+				var zoom_value;
+				if(zoom_status == 0){
+					zoom_value = zoom_in;
+					zoom_status = 1;
+					zoom_thread_name = name;
+				}
+				else{
+					// if already zoomed in
+					// zoom out only the ones that are zoomed in
+					if(zoom_thread_name != name)
+						return;
+					
+					zoom_value = zoom_out;
+					zoom_status = 0;
+				}
+				clear();
+				zoomValue(root, name, zoom_value);
+				paint(root);
+			})
             .on("mouseout",function(d){
                 d3.select(this)
                     .transition()   // 过渡渐变效果
                     .duration(200)      // 经过200毫秒的渐变，变成下面的fill状态
                     .style("fill", function(d) { 
-                        return color((d.children ? d : d.parent).name); 
+                        if(d.depth == 1)
+                            return color(d.name);
+                        else if(d.depth == 2)
+                            return color(d.parent.name + 'hash'); 
+						else if(d.depth == 3)
+							return color(d.parent.name + d.parent.parent.name);
+                        return color(d.name); 
                     });
             });
                       
-        arcs.append("text")  
+		arcs.append("text")  
             .style("font-size", "12px")
             .style("font-family", "simsun")
             .attr("text-anchor","middle")
@@ -118,6 +208,11 @@ function circle(treepath){
                 else 
                     return d.name;
             });
+	}
+	
+    d3.json(treepath, function(error, root) {
+        if(error)
+            console.log(error);
+		paint(root);
     });
-
 }

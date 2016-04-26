@@ -1,0 +1,789 @@
+{
+"name": "20740042X", 
+ "top": [], 
+ "children": [ 
+{
+    "top": [
+        "lxmooc",
+        "xdzyi",
+        "Daolaichen",
+        "猫191192"
+    ],
+    "name": "第一课",
+    "children": [
+        {
+            "top": [
+                "RonnieE"
+            ],
+            "name": "作业",
+            "children": [],
+            "value": 854.1125231156271
+        },
+        {
+            "top": [
+                "lxmooc",
+                "猫191192",
+                "WeiQQ",
+                "RonnieE"
+            ],
+            "name": "讨论区",
+            "children": [],
+            "value": 231600.0
+        },
+        {
+            "top": [
+                "Daolaichen",
+                "xdzyi",
+                "雾里看花139277",
+                "MoeSeattle"
+            ],
+            "name": "视频",
+            "children": [
+                {
+                    "top": [
+                        "Daolaichen",
+                        "叶磊",
+                        "tsinghua_songxl14",
+                        "___329362"
+                    ],
+                    "name": "说在前面的话（理论部分） ",
+                    "value": 2305455.244713351
+                },
+                {
+                    "top": [
+                        "Daolaichen",
+                        "xdzyi",
+                        "雾里看花139277",
+                        "MoeSeattle"
+                    ],
+                    "name": "图像处理入门实践（实践部分） ",
+                    "value": 1671745.9986884224
+                }
+            ],
+            "value": 0.0
+        }
+    ],
+    "value": 0.0
+}
+,{
+    "top": [
+        "xdzyi",
+        "难瘦88",
+        "lxmooc",
+        "Lazyclub"
+    ],
+    "name": "第二课",
+    "children": [
+        {
+            "top": [
+                "难瘦88",
+                "w-s13",
+                "平凡的世界301364",
+                "in-time"
+            ],
+            "name": "作业",
+            "children": [],
+            "value": 3030704.9305539792
+        },
+        {
+            "top": [
+                "lxmooc",
+                "xdzyi",
+                "RonnieE",
+                "助教君_机灵图"
+            ],
+            "name": "讨论区",
+            "children": [],
+            "value": 245520.0
+        },
+        {
+            "top": [
+                "Lazyclub",
+                "xdzyi",
+                "零点启动",
+                "Daolaichen"
+            ],
+            "name": "视频",
+            "children": [
+                {
+                    "top": [
+                        "Lazyclub",
+                        "xdzyi",
+                        "零点启动",
+                        "Daolaichen"
+                    ],
+                    "name": "电子数字计算机（理论部分） ",
+                    "value": 1543706.4401788642
+                },
+                {
+                    "top": [
+                        "小米服饰",
+                        "tsinghua_songxl14",
+                        "yuqing0131",
+                        "不浪漫罪名HKH"
+                    ],
+                    "name": "超级计算机（线上参观） ",
+                    "value": 661134.6152775692
+                }
+            ],
+            "value": 0.0
+        }
+    ],
+    "value": 0.0
+}
+,{
+    "top": [
+        "xdzyi",
+        "lxmooc",
+        "yuqing0131",
+        "zglaozhu2014"
+    ],
+    "name": "第三课",
+    "children": [
+        {
+            "top": [
+                "yan-yang15",
+                "jsl14",
+                "琳玥",
+                "Daolaichen"
+            ],
+            "name": "作业",
+            "children": [],
+            "value": 1458128.8131177928
+        },
+        {
+            "top": [
+                "lxmooc",
+                "yuqing0131",
+                "zglaozhu2014",
+                "xdzyi"
+            ],
+            "name": "讨论区",
+            "children": [],
+            "value": 154800.0
+        },
+        {
+            "top": [
+                "xdzyi",
+                "Maloideae",
+                "出神入化",
+                "libo1218"
+            ],
+            "name": "视频",
+            "children": [
+                {
+                    "top": [
+                        "雾里看花139277",
+                        "向往马云走在云端",
+                        "tsinghua_lkw14",
+                        "我学我成功"
+                    ],
+                    "name": "网络资源下载（实践部分） ",
+                    "value": 346174.00440406473
+                },
+                {
+                    "top": [
+                        "xdzyi",
+                        "Maloideae",
+                        "出神入化",
+                        "libo1218"
+                    ],
+                    "name": "数字化世界（理论部分） ",
+                    "value": 1211856.9232893453
+                }
+            ],
+            "value": 0.0
+        }
+    ],
+    "value": 0.0
+}
+,{
+    "top": [
+        "xdzyi",
+        "yuyg",
+        "yuqing0131",
+        "xingwu"
+    ],
+    "name": "第四课",
+    "children": [
+        {
+            "top": [
+                "xdzyi",
+                "追风筝的线",
+                "pccpdc",
+                "xingwu"
+            ],
+            "name": "作业",
+            "children": [],
+            "value": 1387274.962106799
+        },
+        {
+            "top": [
+                "lxmooc",
+                "yuyg",
+                "yuqing0131",
+                "追逐者"
+            ],
+            "name": "讨论区",
+            "children": [],
+            "value": 154560.0
+        },
+        {
+            "top": [
+                "xdzyi",
+                "xingwu",
+                "yuyg",
+                "yuqing0131"
+            ],
+            "name": "视频",
+            "children": [
+                {
+                    "top": [
+                        "YLFQ",
+                        "0General0",
+                        "HSD",
+                        "detached"
+                    ],
+                    "name": "Windows注册表（实践部分） ",
+                    "value": 331620.1762291272
+                },
+                {
+                    "top": [
+                        "yuyg",
+                        "Sully",
+                        "老顽童757534",
+                        "h-an"
+                    ],
+                    "name": "手机APP研发（访谈部分） ",
+                    "value": 362902.28890679224
+                },
+                {
+                    "top": [
+                        "xdzyi",
+                        "xingwu",
+                        "jybl",
+                        "yuqing0131"
+                    ],
+                    "name": "最熟悉的陌生人-APP（理论部分） ",
+                    "value": 1249804.2018597182
+                }
+            ],
+            "value": 0.0
+        }
+    ],
+    "value": 0.0
+}
+,{
+    "top": [
+        "lxmooc",
+        "xdzyi",
+        "yuyg",
+        "zglaozhu2014"
+    ],
+    "name": "第五课",
+    "children": [
+        {
+            "top": [
+                "tsinghua_liulc14",
+                "heroli",
+                "Mariya",
+                "我不是程序猿"
+            ],
+            "name": "作业",
+            "children": [],
+            "value": 936800.4485013566
+        },
+        {
+            "top": [
+                "lxmooc",
+                "zglaozhu2014",
+                "JeanXu",
+                "yuyg"
+            ],
+            "name": "讨论区",
+            "children": [],
+            "value": 200160.0
+        },
+        {
+            "top": [
+                "xdzyi",
+                "MoeSeattle",
+                "山西高娟",
+                "wangzefeng9"
+            ],
+            "name": "视频",
+            "children": [
+                {
+                    "top": [
+                        "xdzyi",
+                        "山西高娟",
+                        "yuyg",
+                        "wonderneng"
+                    ],
+                    "name": "数据如何安好（理论部分） ",
+                    "value": 923508.7873372872
+                },
+                {
+                    "top": [
+                        "YLFQ",
+                        "wangzefeng9",
+                        "张天瑶027",
+                        "yuqing0131"
+                    ],
+                    "name": "文字排版（实践部分） ",
+                    "value": 928664.4043586056
+                }
+            ],
+            "value": 0.0
+        }
+    ],
+    "value": 0.0
+}
+,{
+    "top": [
+        "wangzefeng9",
+        "lxmooc",
+        "xdzyi",
+        "coolrui"
+    ],
+    "name": "第六课",
+    "children": [
+        {
+            "top": [
+                "liuqian14",
+                "tsinghua_zhangxinyue14_1951",
+                "基科52贾杲果",
+                "没有疆界"
+            ],
+            "name": "作业",
+            "children": [],
+            "value": 902580.8359901995
+        },
+        {
+            "top": [
+                "lxmooc",
+                "wangzefeng9",
+                "助教君_机灵图",
+                "RonnieE"
+            ],
+            "name": "讨论区",
+            "children": [],
+            "value": 185520.0
+        },
+        {
+            "top": [
+                "xdzyi",
+                "彭楚榕",
+                "Daolaichen",
+                "山西高娟"
+            ],
+            "name": "视频",
+            "children": [
+                {
+                    "top": [
+                        "xdzyi",
+                        "彭楚榕",
+                        "Daolaichen",
+                        "zhouhshr"
+                    ],
+                    "name": "从单机到联网（理论部分） ",
+                    "value": 390289.8631936563
+                },
+                {
+                    "top": [
+                        "zjwyk",
+                        "彭楚榕",
+                        "我不是废物",
+                        "Sully"
+                    ],
+                    "name": "对话联想（访谈部分） ",
+                    "value": 138286.6845930515
+                },
+                {
+                    "top": [
+                        "lalakjj",
+                        "pccpdc",
+                        "ajaney",
+                        "hh恒"
+                    ],
+                    "name": "联想创新中心（线上参观） ",
+                    "value": 80406.41418528816
+                },
+                {
+                    "top": [
+                        "yanzi628",
+                        "wuyuanbin",
+                        "yuqing0131",
+                        "coolrui"
+                    ],
+                    "name": "PPT制作（实践部分） ",
+                    "value": 152816.2013711551
+                }
+            ],
+            "value": 0.0
+        }
+    ],
+    "value": 0.0
+}
+,{
+    "top": [
+        "xdzyi",
+        "lxmooc",
+        "追逐者",
+        "coolrui"
+    ],
+    "name": "第七课",
+    "children": [
+        {
+            "top": [
+                "xdzyi",
+                "tsinghua_yaosy15_4141",
+                "tsinghua_my-zh14_3992",
+                "Momento"
+            ],
+            "name": "作业",
+            "children": [],
+            "value": 848284.5349197258
+        },
+        {
+            "top": [
+                "lxmooc",
+                "追逐者",
+                "QuanCheng",
+                "coolrui"
+            ],
+            "name": "讨论区",
+            "children": [],
+            "value": 139440.0
+        },
+        {
+            "top": [
+                "xdzyi",
+                "山西高娟",
+                "slm1619",
+                "出神入化"
+            ],
+            "name": "视频",
+            "children": [
+                {
+                    "top": [
+                        "越学",
+                        "slm1619",
+                        "daixinxin",
+                        "王瑞琴"
+                    ],
+                    "name": "网络连通性测试（实践部分） ",
+                    "value": 176048.04971051545
+                },
+                {
+                    "top": [
+                        "xdzyi",
+                        "jybl",
+                        "山西高娟",
+                        "Daolaichen"
+                    ],
+                    "name": "+互联网（理论部分） ",
+                    "value": 757694.3211141814
+                }
+            ],
+            "value": 0.0
+        }
+    ],
+    "value": 0.0
+}
+,{
+    "top": [
+        "wangzefeng9",
+        "lxmooc",
+        "xdzyi",
+        "Daolaichen"
+    ],
+    "name": "第八课",
+    "children": [
+        {
+            "top": [
+                "xdzyi",
+                "琳玥",
+                "Daolaichen",
+                "彭楚榕"
+            ],
+            "name": "作业",
+            "children": [],
+            "value": 821068.3976820379
+        },
+        {
+            "top": [
+                "wangzefeng9",
+                "lxmooc",
+                "RonnieE",
+                "xdzyi"
+            ],
+            "name": "讨论区",
+            "children": [],
+            "value": 167760.0
+        },
+        {
+            "top": [
+                "xdzyi",
+                "Daolaichen",
+                "wangzefeng9",
+                "coolrui"
+            ],
+            "name": "视频",
+            "children": [
+                {
+                    "top": [
+                        "xdzyi",
+                        "wangzefeng9",
+                        "Daolaichen",
+                        "coolrui"
+                    ],
+                    "name": "制作演示文稿（实践部分） ",
+                    "value": 230459.23360678912
+                },
+                {
+                    "top": [
+                        "xdzyi",
+                        "yuyg",
+                        "Daolaichen",
+                        "山西高娟"
+                    ],
+                    "name": "走进大数据（理论部分） ",
+                    "value": 213927.1067922529
+                },
+                {
+                    "top": [
+                        "eheechan",
+                        "StanfordJJ",
+                        "孙诗",
+                        "wangzefeng9"
+                    ],
+                    "name": "多媒体演示（作品点评） ",
+                    "value": 75090.34118077236
+                }
+            ],
+            "value": 0.0
+        }
+    ],
+    "value": 0.0
+}
+,{
+    "top": [
+        "xdzyi",
+        "lxmooc",
+        "yuqing0131",
+        "yuyg"
+    ],
+    "name": "第九课",
+    "children": [
+        {
+            "top": [
+                "tsinghua_liulc14",
+                "没有疆界",
+                "基科52贾杲果",
+                "Daolaichen"
+            ],
+            "name": "作业",
+            "children": [],
+            "value": 707592.1526944293
+        },
+        {
+            "top": [
+                "lxmooc",
+                "RonnieE",
+                "xdzyi",
+                "yuqing0131"
+            ],
+            "name": "讨论区",
+            "children": [],
+            "value": 129840.0
+        },
+        {
+            "top": [
+                "xdzyi",
+                "Zhou_Smiles",
+                "yuyg",
+                "梅梅要学习"
+            ],
+            "name": "视频",
+            "children": [
+                {
+                    "top": [
+                        "yuqing0131",
+                        "zengjunjie",
+                        "你好和再见",
+                        "Verty"
+                    ],
+                    "name": "学术搜索（实践部分） ",
+                    "value": 56018.86092798138
+                },
+                {
+                    "top": [
+                        "coolrui",
+                        "ku ku",
+                        "GL2000",
+                        "Allen_Francis"
+                    ],
+                    "name": "游戏制作（作品赏析） ",
+                    "value": 87323.38252510202
+                },
+                {
+                    "top": [
+                        "xdzyi",
+                        "山西高娟",
+                        "Zhou_Smiles",
+                        "yuyg"
+                    ],
+                    "name": "搜索引擎（理论部分） ",
+                    "value": 470686.4353995692
+                }
+            ],
+            "value": 0.0
+        }
+    ],
+    "value": 0.0
+}
+,{
+    "top": [
+        "lxmooc",
+        "wangzefeng9",
+        "追逐者",
+        "梅梅要学习"
+    ],
+    "name": "第十课",
+    "children": [
+        {
+            "top": [
+                "彭楚榕",
+                "Daolaichen",
+                "pccpdc",
+                "yuyg"
+            ],
+            "name": "作业",
+            "children": [],
+            "value": 675121.4857498321
+        },
+        {
+            "top": [
+                "lxmooc",
+                "wangzefeng9",
+                "追逐者",
+                "猫191192"
+            ],
+            "name": "讨论区",
+            "children": [],
+            "value": 249600.0
+        },
+        {
+            "top": [
+                "路人X",
+                "Daolaichen",
+                "yuyg",
+                "芸萱"
+            ],
+            "name": "视频",
+            "children": [
+                {
+                    "top": [
+                        "littleP孩",
+                        "梅梅要学习",
+                        "田志国",
+                        "路人X"
+                    ],
+                    "name": "HTML入门实践（实践部分） ",
+                    "value": 132455.5299938586
+                },
+                {
+                    "top": [
+                        "Daolaichen",
+                        "山西高娟",
+                        "芸萱",
+                        "yuyg"
+                    ],
+                    "name": "信息安全（理论部分） ",
+                    "value": 513318.81366867846
+                }
+            ],
+            "value": 0.0
+        }
+    ],
+    "value": 0.0
+}
+,{
+    "top": [
+        "wangzefeng9",
+        "lxmooc",
+        "Daolaichen",
+        "yuqing0131"
+    ],
+    "name": "第十一课",
+    "children": [
+        {
+            "top": [
+                "DonEinstein",
+                "wuyuanxiao",
+                "Daolaichen",
+                "qjh220"
+            ],
+            "name": "作业",
+            "children": [],
+            "value": 952773.6400051835
+        },
+        {
+            "top": [
+                "wangzefeng9",
+                "lxmooc",
+                "RonnieE",
+                "小文助教"
+            ],
+            "name": "讨论区",
+            "children": [],
+            "value": 204240.0
+        },
+        {
+            "top": [
+                "Zhou_Smiles",
+                "xingwu",
+                "pjzsc0017",
+                "Daolaichen"
+            ],
+            "name": "视频",
+            "children": [
+                {
+                    "top": [
+                        "xingwu",
+                        "老顽童757534",
+                        "Zhou_Smiles",
+                        "梅梅要学习"
+                    ],
+                    "name": "Excel实践（实践部分） ",
+                    "value": 157339.6368887904
+                },
+                {
+                    "top": [
+                        "YLFQ",
+                        "猫191192",
+                        "你好和再见",
+                        "ellian191729"
+                    ],
+                    "name": "信息技术交叉应用（访谈部分） ",
+                    "value": 68758.24003289513
+                },
+                {
+                    "top": [
+                        "yuyg",
+                        "yuqing0131",
+                        "Daolaichen",
+                        "王哲A"
+                    ],
+                    "name": "说在后面的话（理论部分） ",
+                    "value": 157214.79892527673
+                }
+            ],
+            "value": 0.0
+        }
+    ],
+    "value": 0.0
+}
+]
+ }
