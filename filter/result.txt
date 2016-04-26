@@ -13,19 +13,19 @@ RESULT 2016/01/17
 
 watch_video 1.0
 
-django_comment_client.base.views.create_comment 900
-django_comment_client.base.views.update_comment 900
+django_comment_client.base.views.update_comment 1200
+django_comment_client.base.views.create_comment 1200
 
-django_comment_client.base.views.vote_for_thread    360.0
-django_comment_client.base.views.vote_for_comment   360.0
+django_comment_client.base.views.vote_for_thread    480.0
+django_comment_client.base.views.vote_for_comment   480.0
+view_forum  240.0
 
-view_forum  180.0
+problem_save    43.63579081449377
+problem_check   145.45263604831257
 
 problem_graded  281.603625509501
 showanswer  243.51007591511234
-problem_check   145.45263604831257
 
-problem_save    43.63579081449377
 
 --------End of event types--------
 

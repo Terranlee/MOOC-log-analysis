@@ -736,6 +736,7 @@ class Filter(object):
             
         # course_structure shows the structure of this course
         # course_mapping map the structure to the hash number
+        ordered_structure = list()
         course_structure = dict()
         course_mapping = dict()
 
@@ -748,6 +749,7 @@ class Filter(object):
             href_li = i.ul.find_all('a')
             assert (len(li) == len(href_li))
             course_structure[index1] = [i.string for i in li]
+            ordered_structure.append(index1)
             single_index = set()
             for it in range(len(li)):
                 referer = href_li[it].attrs['href']
@@ -765,6 +767,7 @@ class Filter(object):
         output = open(outfile, 'w', encoding='utf-8')
         output.write(json.dumps(course_structure, ensure_ascii=False) + '\n')
         output.write(json.dumps(course_mapping, ensure_ascii=False) + '\n')
+        output.write(json.dumps(ordered_structure, ensure_ascii=False) + '\n')
         output.close()
 
     def load_course_structure(self):
@@ -1158,7 +1161,7 @@ class Filter(object):
         # data preparation ends here
 
     def test(self):
-        #self.parse_course_structure()
+        self.parse_course_structure()
         #self.parse_forum_by_structure()
         #self.parse_problem_by_structure()
         #self.parse_video_by_structure()

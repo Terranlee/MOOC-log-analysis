@@ -5,7 +5,6 @@
 # uid : 502819
 import os
 import math
-import numpy
 import json
 
 class Analyzer(object):
@@ -35,6 +34,22 @@ class Analyzer(object):
 
         # the maximum number of top student in each section
         self.max_top_student = 4
+
+        # which kind of filter we use when selecting active student
+        # if type = 0, use absolute_count_filter
+        # if type = 1, use absolute_value_filter
+        # if type = 2, use relative_sort_filter
+        # if type = 3, use absolute_counter_filter + absolute_value_filter
+        # if type = 4, use relative_sort_filter + absolute_value_filter
+        # if type = 5, use relative_sort_filter + absolute_count_filter
+        self.filter_type = 5
+        self.sankey_video_least = 300       # parameter for type = 0
+        self.sankey_threshold = 1000        # parameter for type = 1
+        self.sankey_top_student = 100        # parameter for type = 2
+
+        self.debug_counter1 = 0
+        self.debug_counter2 = 0
+
         self.event_param = {
             'watch_video': 0.0,
             'view_forum': 0.0,
@@ -62,6 +77,7 @@ class Analyzer(object):
         }
     
     def load_structure(self):
+        self.ordered_structure = list()
         self.course_structure = dict()
         self.course_mapping = dict()
 
@@ -70,6 +86,7 @@ class Analyzer(object):
         try:
             self.course_structure = json.loads(file_handle.readline(), strict=False)
             self.course_mapping = json.loads(file_handle.readline(), strict=False)
+            self.ordered_structure = json.loads(file_handle.readline(), strict=False)
         except(ValueError, KeyError):
             print ('error loading course structure')
         file_handle.close()
@@ -252,6 +269,14 @@ class Analyzer(object):
         for i in range(len(sorted_thread_id)):
             sorted_thread_id[i][0] = self.course_mapping[ sorted_thread_id[i][0] ]
 
+        tmp_list = list()
+        for i in self.ordered_structure:
+            for j in sorted_thread_id:
+                if j[0] == i:
+                    tmp_list.append(j)
+                    break
+        sorted_thread_id = tmp_list
+        
         outfile = self.result_dir + self.c_id + '.streamdata.csv'
         output = open(outfile, 'w', encoding='utf-8')
         output.write('key,value,date' + '\n')
@@ -283,6 +308,7 @@ class Analyzer(object):
             return 1
 
     def calc_stream_value(self):
+        import numpy
         '''
             generated the data file needed by stream graph
         '''
@@ -362,10 +388,12 @@ class Analyzer(object):
             if subthread not in heriarchy[thread]['video']:
                 heriarchy[thread]['video'][subthread] = dict()
             for user in video_user_date[i4x]:
-                if user not in heriarchy[thread]['video'][subthread]:
-                    heriarchy[thread]['video'][subthread][user] = 0.0
+                # change from string uid to numeric uid
+                user_i = int(user)
+                if user_i not in heriarchy[thread]['video'][subthread]:
+                    heriarchy[thread]['video'][subthread][user_i] = 0.0
                 for date in video_user_date[i4x][user]:
-                    heriarchy[thread]['video'][subthread][user] += video_user_date[i4x][user][date][0]
+                    heriarchy[thread]['video'][subthread][user_i] += video_user_date[i4x][user][date][0]
 
         print ('process video date finished')
 
@@ -411,7 +439,7 @@ class Analyzer(object):
                         assert(False);
 
                     # consider user in this section
-                    uid = log['context']['user_id']
+                    uid = int(log['context']['user_id'])
                     if uid not in heriarchy[thread][top_type]:
                         heriarchy[thread][top_type][uid] = 0.0
                     heriarchy[thread][top_type][uid] += value * self.event_param[event_type]
@@ -460,7 +488,7 @@ class Analyzer(object):
                             value_sum += item[1]
                         heriarchy[thread][top_type][subthread]['value'] = value_sum
                         for i in range( min(self.max_top_student, len(heriarchy[thread][top_type][subthread]['user'])) ):
-                            heriarchy[thread][top_type][subthread]['top'].append( heriarchy[thread][top_type][subthread]['user'][i][0] )
+                            heriarchy[thread][top_type][subthread]['top'].append( int(heriarchy[thread][top_type][subthread]['user'][i][0]) )
         # inner level, for video only
         print ('inner level for video')
         for thread in heriarchy:
@@ -487,7 +515,25 @@ class Analyzer(object):
             for i in range(min(self.max_top_student, len(sorted_ans))):
                 heriarchy[thread]['top'].append(sorted_ans[i][0])
 
+    def load_all_names(self):
+        '''
+            load all the related names, they can be checked by user_id
+        '''
+        filename = self.result_dir + self.c_id + '.allnames'
+        try:
+            content = json.loads(open(filename).read(), strict=False)
+        except(ValueError, KeyError):
+            print ('error loading all names')
+
+        uid_to_name = dict()
+        for i in content:
+            uid_to_name[ i[1] ] = i[3]
+        return uid_to_name
+
     def to_pie_graph_data(self, heriarchy):
+        uid_to_name = self.load_all_names()
+        self.load_structure()
+        type_mapping = {'video': '视频', 'problem': '作业', 'forum': '讨论区'}
         tree = dict()
         tree['name'] = repr(self.c_id)
         tree['top'] = list()
@@ -495,19 +541,29 @@ class Analyzer(object):
         for thread in heriarchy:
             if thread in {'top', 'user', 'value'}:
                 continue
-            thread_dict = {'name': thread, 'children': list(), 
+            # change to chinese name
+            for i in range(len(heriarchy[thread]['top'])):
+                heriarchy[thread]['top'][i] = uid_to_name[ heriarchy[thread]['top'][i] ]
+            thread_dict = {'name': self.course_mapping[thread], 'children': list(), 
                             'top': heriarchy[thread]['top'], 'value': 0.0}
             for top_type in heriarchy[thread]:
                 if top_type in {'top', 'user', 'value'}:
                     continue
 
-                top_type_dict = {'name': top_type, 'children': list(), 
+                # change to chinese name
+                for i in range(len(heriarchy[thread][top_type]['top'])):
+                    heriarchy[thread][top_type]['top'][i] = uid_to_name[ heriarchy[thread][top_type]['top'][i] ]
+                top_type_dict = {'name': type_mapping[top_type], 'children': list(), 
                                 'top': heriarchy[thread][top_type]['top'], 'value': heriarchy[thread][top_type]['value']}
                 if top_type == 'video':
                     for subthread in heriarchy[thread][top_type]:
                         if subthread in {'top', 'user', 'value'}:
                             continue
-                        subthread_dict = {'name': subthread, 'value': heriarchy[thread][top_type][subthread]['value'],
+
+                        # change to chinese name
+                        for i in range(len(heriarchy[thread][top_type][subthread]['top'])):
+                            heriarchy[thread][top_type][subthread]['top'][i] = uid_to_name[ heriarchy[thread][top_type][subthread]['top'][i] ]
+                        subthread_dict = {'name': self.course_mapping[subthread], 'value': heriarchy[thread][top_type][subthread]['value'],
                                             'top': heriarchy[thread][top_type][subthread]['top'] }
                         top_type_dict['children'].append(subthread_dict)
                 thread_dict['children'].append( top_type_dict )
@@ -515,8 +571,18 @@ class Analyzer(object):
 
         outfile = self.result_dir + self.c_id + '.pie_graph.json'
         output = open(outfile, 'w', encoding='utf-8')
-        # write json tree with structure
-        output.write(json.dumps(tree, indent=4) + '\n')
+        # dump the json file with order, to make sure the pie graph is in order
+        output.write('''{\n"name": "%s", \n "top": [], \n "children": [ \n''' % (self.c_id))
+        counter = 0
+        for i in self.ordered_structure:
+            for child in tree['children']:
+                if child['name'] == i:
+                    output.write(json.dumps(child, indent=4, ensure_ascii=False) + '\n')
+                    if counter != len(self.ordered_structure) - 1:
+                        output.write(",")
+                    break
+            counter += 1
+        output.write(''']\n }\n''')
         output.close()
 
     def calc_pie_graph_value(self):
@@ -530,12 +596,311 @@ class Analyzer(object):
         self.calc_pie_value_top(heriarchy)
         self.to_pie_graph_data(heriarchy)
 
+    def calc_week_score(self, week_score):
+        # load all log data, reparse them by week and uid
+
+        filename = self.result_dir + self.c_id + '.date_course'
+        print ('loading data file')
+        try:
+            date_course_dict = json.loads(open(filename).read(), strict=False)
+        except(ValueError, KeyError):
+            print ('error loading all course data')
+        print ('loading succeed')
+
+        print ('processing problem and forum')
+
+        # parse all date by week
+        all_dates = [date for date in date_course_dict]
+        all_dates.sort()
+        all_weeks = dict()
+        for i in range(0, len(all_dates)):
+            all_weeks[all_dates[i]] = int(i / 7)
+
+        invalid_counter = 0
+        for date in date_course_dict:
+            which_week = all_weeks[date]
+            if which_week not in week_score:
+                week_score[which_week] = dict()
+            for thread in date_course_dict[date]:
+                for log in date_course_dict[date][thread]:
+                    event_type = log['event_type']
+                    # watch video will be processed later
+                    if event_type == 'watch_video':
+                        invalid_counter += 1
+                        continue
+                    uid = log['context']['user_id']
+                    if uid == '':
+                        invalid_counter += 1
+                        continue
+
+                    if uid not in week_score[which_week]:
+                        week_score[which_week][uid] = list()
+                    week_score[which_week][uid].append(log)
+        print ('finish forum and problem data, total %d invalid' % (invalid_counter))
+        invalid_counter = 0
+
+        filename = self.result_dir + self.c_id + '.video_time'
+        try:
+            video_user_date = json.loads(open(filename).read(), strict=False)
+        except(ValueError, KeyError):
+            print ('loading video data failed')
+
+        for vid in video_user_date:
+            for uid in video_user_date[vid]:
+                for date in video_user_date[vid][uid]:
+                    # the convert from string uid to numeric uid
+                    uid_num = int(uid)
+                    which_week = all_weeks[date]
+                    if which_week not in week_score:
+                        week_score[which_week] = dict()
+                    # the last record in week_score[which_week][uid] is the length of video
+                    if uid_num not in week_score[which_week]:
+                        week_score[which_week][uid_num] = list()
+                        week_score[which_week][uid_num].append( {'watch_video': video_user_date[vid][uid][date][0] } )
+                        continue
+                    elif 'watch_video' not in week_score[which_week][uid_num][-1]:
+                        week_score[which_week][uid_num].append( {'watch_video': video_user_date[vid][uid][date][0] } )
+                    else:
+                        week_score[which_week][uid_num][-1]['watch_video'] += video_user_date[vid][uid][date][0]
+        print ('finish video data, total %d invalid' % (invalid_counter))
+
+        # here, for each uid, we calculate the earlist and latest time of the log data
+        earlist = dict()
+        latest = dict()
+        for date in date_course_dict:
+            which_week = all_weeks[date]
+            for thread in date_course_dict[date]:
+                for log in date_course_dict[date][thread]:
+                    # remove some of the invalid data
+                    if log['event_type'] == 'watch_video' and log['time1'] == 0:
+                        continue
+                    user_id = log['context']['user_id']
+                    if user_id not in earlist:
+                        earlist[user_id] = which_week
+                    if user_id not in latest:
+                        latest[user_id] = which_week
+                    if which_week < earlist[user_id]:
+                        earlist[user_id] = which_week
+                    if which_week > latest[user_id]:
+                        latest[user_id] = which_week
+        return earlist, latest
+
+    def apply_filter_absolute_count(self, log_list):
+        # watch at least self.sankey_video_least seconds of video
+        if 'watch_video' not in log_list[-1]:
+            return False
+        elif log_list[-1]['watch_video'] < self.sankey_video_least:
+            return False
+        # the last record of this user must be watch_video
+        log_list.pop()
+
+        #self.debug_counter1 += 1
+        # if it has any related log about problem or forum, then this student is active
+        if len(log_list) > 0:
+            #self.debug_counter2 += 1
+            return True
+        return False
+
+    def apply_filter_absolute_value(self, log_list):
+        # calculate the score this week
+        total_score = 0
+        if 'watch_video' in log_list[-1]:
+            total_score += log_list[-1]['watch_video']
+            log_list.pop()
+        for log in log_list:
+            event_type = log['event_type']
+            counter = 0
+            if event_type in self.problem_type:
+                counter = self.__parse_problem_log_count(log)
+            else:
+                counter = 1
+            total_score += counter * self.event_param[event_type]
+        return total_score
+
+    def apply_filter_relative_value(self, log_list):
+        # still need to calculate the value
+        # then sort the value, and choose only the top ones
+        return self.apply_filter_absolute_value(log_list)
+
+    def apply_filter_active_user(self, week_score, active_user):
+        for week in week_score:
+            active_user[week] = set()
+            temp_dict = dict()
+            for uid in week_score[week]:
+                if self.filter_type == 0:
+                    rtv = self.apply_filter_absolute_count(week_score[week][uid])
+                    if rtv == True:
+                        active_user[week].add(uid)
+                elif self.filter_type == 1:
+                    rtv = self.apply_filter_absolute_value(week_score[week][uid])
+                    if rtv > self.sankey_threshold:
+                        active_user[week].add(uid)
+                elif self.filter_type == 2:
+                    rtv = self.apply_filter_relative_value(week_score[week][uid])
+                    temp_dict[uid] = rtv
+                elif self.filter_type == 3: # combined filter: absolute_count + absolute_value
+                    rtv = self.apply_filter_absolute_count(week_score[week][uid])
+                    if rtv == False:
+                        continue
+                    rtv = self.apply_filter_absolute_value(week_score[week][uid])
+                    if rtv > self.sankey_threshold:
+                        active_user[week].add(uid)
+                elif self.filter_type == 4: # combined filter: absolute_value + relative_value
+                    rtv = self.apply_filter_absolute_value(week_score[week][uid])
+                    if rtv < self.sankey_threshold:
+                        continue
+                    temp_dict[uid] = rtv
+                elif self.filter_type == 5: # combined filter: absolute_count + relative_value
+                    rtv = self.apply_filter_absolute_count(week_score[week][uid])
+                    if rtv == False:
+                        continue
+                    rtv = self.apply_filter_absolute_value(week_score[week][uid])
+                    temp_dict[uid] = rtv
+            # sort by value, and record only the top ones
+            if self.filter_type == 2 or self.filter_type == 4 or self.filter_type == 5:
+                sorted_user = sorted(temp_dict.items(), key=lambda asd:asd[1], reverse=True)
+                num_of_student = min(self.sankey_top_student, len(sorted_user))
+                for i in range(0, num_of_student):
+                    active_user[week].add(sorted_user[i][0])
+
+    def apply_filter(self, week_score):
+        '''
+            apply different kinds of filter to week_score
+        '''
+        active_user = dict()
+        self.apply_filter_active_user(week_score, active_user)
+        return active_user
+
+    def to_sankey_graph_data(self, active_user, earlist, latest):
+        # definition of the different name templates
+        active_template = 'Week%d_Active'
+        new_template = 'Week%d_New'
+        # never_new means this user has no activity before
+        never_new_template = 'Week%d_NNew'
+        nactive_template = 'Week%d_NActive'
+        # never_nactive means this user has no activity later
+        never_nactive_template = 'Week%d_NNactive'
+        # the active connection between two weeks
+        active_link_template = 'Week%d_Active_Week%d_Active'
+
+        # the whole data structure for sankey
+        data = {"nodes": list(), "links": list(), "names": dict()}
+
+        # change uid to name
+        uid_to_name = self.load_all_names()
+        for week in active_user:
+            temp_list = list()
+            for uid in active_user[week]:
+                temp_list.append(uid_to_name[int(uid)])
+            active_user[week] = set(temp_list)
+        # change earlist and latest to name
+        temp_dict = dict()
+        for uid in earlist:
+            temp_dict[ uid_to_name[int(uid)] ] = earlist[uid]
+        earlist = temp_dict
+        temp_dict = dict()
+        for uid in latest:
+            temp_dict[ uid_to_name[int(uid)] ] = latest[uid]
+        latest = temp_dict
+
+        # construct sankey data structure
+        num_of_weeks = len(active_user)
+        # construct nodes
+        data['nodes'].append(['Week1_Active', 'Week2_New', 'Week2_NNew'])
+        for i in range(num_of_weeks-2):
+            active_name = active_template % (i + 2)
+            new_name = new_template % (i + 3)
+            never_new_name = never_new_template % (i + 3)
+            nactive_name = nactive_template % (i + 2)
+            never_nactive_name = never_nactive_template % (i + 2)
+            # now at every inner week, there are total 5 nodes
+            data['nodes'].append([nactive_name, never_nactive_name, active_name, new_name, never_new_name])
+        active_name = active_template % (num_of_weeks)
+        nactive_name = nactive_template % (num_of_weeks)
+        never_nactive_name = never_nactive_template % (num_of_weeks)
+        data['nodes'].append([nactive_name, never_nactive_name, active_name])
+
+        # construct names
+        for i in range(num_of_weeks):
+            active_name = active_template % (i + 1)
+            data['names'][active_name] = active_user[i]
+        for i in range(1, num_of_weeks):
+            # construct new and never_new
+            new_name = new_template % (i + 1)
+            never_new_name = never_new_template % (i + 1)
+            data['names'][new_name] = set()
+            data['names'][never_new_name] = set()
+            temp_set = active_user[i] - active_user[i-1]
+            for user in temp_set:
+                if earlist[user] < i:
+                    data['names'][new_name].add(user)
+                elif earlist[user] == i:
+                    data['names'][never_new_name].add(user)
+                else:
+                    # for debug
+                    print ('!!!!!!!!!!Error, earlist dict error!!!!!!!!!!')
+        for i in range(0, num_of_weeks-1):
+            # construct nactive and never_nactive
+            nactive_name = nactive_template % (i + 2)
+            never_nactive_name = never_nactive_template % (i + 2)
+            data['names'][nactive_name] = set()
+            data['names'][never_nactive_name] = set()
+            temp_set = active_user[i] - active_user[i + 1]
+            for user in temp_set:
+                if latest[user] > i:
+                    data['names'][nactive_name].add(user)
+                elif latest[user] == i:
+                    data['names'][never_new_name].add(user)
+                else:
+                    # for debug
+                    print ('!!!!!!!!!!Error, latest dict error!!!!!!!!!!')
+        for i in range(0, num_of_weeks-1):
+            link_name = active_link_template % (i+1, i+2)
+            data['names'][link_name] = active_user[i] & active_user[i + 1]
+
+        # construct links
+        for i in range(1, num_of_weeks):
+            # two active node, connecting two weeks
+            w1a_name = active_template % (i)
+            w2a_name = active_template % (i + 1)
+            # two types of nactive node
+            w2na_name = nactive_template % (i + 1)
+            w2nna_name = never_nactive_template % (i + 1)
+            # two types of new node
+            w2n_name = new_template % (i + 1)
+            w2nn_name = never_new_template % (i + 1)
+
+            data['links'].append( [w1a_name, len(data['names'][w2na_name]), w2na_name] )
+            data['links'].append( [w1a_name, len(data['names'][w2nna_name]), w2nna_name] )
+            # connection between two active node
+            data['links'].append( [w1a_name, len(data['names'][w1a_name] & data['names'][w2a_name]), w2a_name] )
+
+            data['links'].append( [w2n_name, len(data['names'][w2n_name]), w2a_name] )
+            data['links'].append( [w2nna_name, len(data['names'][w2nna_name]), w2a_name])
+
+        for i in data['names']:
+            data['names'][i] = list(data['names'][i])
+
+        filename = self.result_dir + self.c_id + '.sankey.json'
+        output = open(filename, 'w', encoding='utf-8')
+        output.write(json.dumps(data, indent=4, ensure_ascii=False) + '\n')
+        output.close()
+
+    def calc_sankey_graph_value(self):
+        '''
+            generate the data file needed by the sankey graph
+        '''
+        week_score = dict()
+        earlist, latest = self.calc_week_score(week_score)
+        active_user = self.apply_filter(week_score)
+        self.to_sankey_graph_data(active_user, earlist, latest)
+        
     def test(self):
         #self.log_data_count()
         self.load_weight()
         #self.calc_stream_value()
-        self.calc_pie_graph_value()
-        #self.uid_time_distribution(date_course_dict)
+        #self.calc_pie_graph_value()
+        self.calc_sankey_graph_value()
 
 def main():
     a = Analyzer('20740042X')
