@@ -1150,7 +1150,7 @@ class Filter(object):
         '''
             this function can run on data server or local computer
             需要四个文件作为前提
-            20740042X_20150906_20151231.orig 从服务器获得的原始数据
+            20740042X_20150906_20151231.orig 用run_on_server从服务器获得的原始数据
             20740042X.allnames 用sql_select.py获得的所有用户名
             20740042X.html 带有课程导航栏的网页保存下来，用来分析课程结构
                 或者可以连接到课程的mongoDB数据库的结构
