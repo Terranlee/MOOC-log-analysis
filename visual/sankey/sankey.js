@@ -365,9 +365,9 @@ Licence: MIT Open Source licence http://www.opensource.org/licenses/mit-license.
       // update by terranlee
       // add show student name
       var content;
-      if(nactive_reg.test(this.right_box.label_text))
+      if(nactive_reg.test(this.right_box.label_text) || never_nactive_reg.test(this.right_box.label_text))
         content = all_node_name[this.right_box.label_text];
-      if(new_reg.test(this.left_box.label_text))
+      if(new_reg.test(this.left_box.label_text) || never_new_reg.test(this.left_box.label_text))
         content = all_node_name[this.left_box.label_text];
       if(active_reg.test(this.right_box.label_text) && active_reg.test(this.left_box.label_text))
         content = all_node_name[this.left_box.label_text + "_" + this.right_box.label_text]
@@ -657,15 +657,18 @@ Licence: MIT Open Source licence http://www.opensource.org/licenses/mit-license.
       var c = default_node_color;
       // active node, just change the color, the shape is the same
       if(active_reg.test(this.label_text)){
-        c = color_blue;
+        c = color_active;
         this.box = r.rect(this.x, this.y, box_width, this.size()).attr({
           'fill': c,
           "stroke": "#D4CBF2"
         });
       }
       // new node, change color, change shape
-      else if(new_reg.test(this.label_text)){
-        c = color_red;
+      else if(new_reg.test(this.label_text) || never_new_reg.test(this.label_text)){
+		    if(new_reg.test(this.label_text))
+			   c = color_new;
+		    else if(never_new_reg.test(this.label_text))
+			   c = color_nnew;
         // draw a in-shape for new node
         var start = "M" + this.x.toString() + "," + this.y.toString();
         var point1 = "L" + (this.x+box_width).toString() + "," + this.y.toString();
@@ -678,8 +681,11 @@ Licence: MIT Open Source licence http://www.opensource.org/licenses/mit-license.
         });
       }
       // nactive node, change color, change shape
-      else if(nactive_reg.test(this.label_text)){
-        c = color_green;
+      else if(nactive_reg.test(this.label_text) || never_nactive_reg.test(this.label_text)){
+		    if(nactive_reg.test(this.label_text))
+			   c = color_nactive;
+		    else if(never_nactive_reg.test(this.label_text))
+			   c = color_nnactive;
         // draw a triangle for new node
         var start = "M" + this.x.toString() + "," + this.y.toString();
         var point1 = "L" + (this.x+box_width).toString() + "," + (this.y+this.size()/2).toString();
@@ -823,6 +829,7 @@ Licence: MIT Open Source licence http://www.opensource.org/licenses/mit-license.
       if(!active_reg.test(this.label_text)){
         op = "0.0";
       }
+	    // end of terranlee's code
       this.label.attr({
         'opacity': op
       });
@@ -853,6 +860,7 @@ Licence: MIT Open Source licence http://www.opensource.org/licenses/mit-license.
       if(!active_reg.test(this.label_text)){
         op = "0.0";
       }
+	    // end of terranlee's code
       this.label.attr({
         'opacity': op
       });

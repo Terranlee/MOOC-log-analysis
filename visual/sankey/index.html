@@ -10,17 +10,21 @@
         <link rel="stylesheet" href="style.css" />
     </head>
     <body>
-    <script type='text/javascript'>
-      $(document).ready(function() {
-        var filename = "20740042X.sankey.json";
-        //var filename = "20740042X_count.sankey.json";
-        paint_sankey(filename);
-    });
-      
+
+    <script>
+        // if_shrink表示是否对数据流进行缩放，突出连续两周active的部分
+        if_shrink = 0;
+        var name1 = "20740042X.sankey.json";
+        $(document).ready(function() {
+            paint_sankey(name1);
+        });
+        
     </script>
+    
     <div id='sankey' style="width:3600px;height:500px">
       &nbsp;
     </div>
+
     <div id="from_to"></div>
     <div id="student_name"></div>
   </body>
