@@ -341,8 +341,6 @@ class Analyzer(object):
 
         date_thread_value = numpy.zeros([num_of_date, num_of_threads])
 
-        output = open('temp', 'w')
-
         # calculate weighted value
         for date in date_course_dict:
             for thread in date_course_dict[date]:
@@ -362,8 +360,6 @@ class Analyzer(object):
                     date_thread_value[x][y] += value * self.event_param[event_type]
 
         self.to_streamgraph_data(date_thread_value, date_to_num, threads_to_num, time_interval_uid)
-
-        output.close()
 
     def calc_pie_value_video(self, heriarchy):
         '''
