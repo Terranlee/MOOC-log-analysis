@@ -2,3 +2,5 @@ data/*.gz
 data/*.data
 result/*
 visual/stream/*.data
+filter/.tags
+filter/.tags_sorted_by_file

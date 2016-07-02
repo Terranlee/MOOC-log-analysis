@@ -42,12 +42,12 @@ class Analyzer(object):
 
         # sankey图用到的参数，如何选择活跃学生
         # which kind of filter we use when selecting active student
-        # if type = 0, use absolute_count_filter
-        # if type = 1, use absolute_value_filter
-        # if type = 2, use relative_sort_filter
-        # if type = 3, use absolute_counter_filter + absolute_value_filter
-        # if type = 4, use relative_sort_filter + absolute_value_filter
-        # if type = 5, use relative_sort_filter + absolute_count_filter
+        # if type = 0, 视频时间不少于sankey_video_least，同时有一个以上的作业/讨论区
+        # if type = 1, 所有行为权值不少于sankey_threshold 
+        # if type = 2, 排序，取前sankey_top_student人
+        # if type = 3, type=0 + type=1
+        # if type = 4, type=1 + type=2
+        # if type = 5, type=0 + type=2
         self.filter_type = 0
         self.sankey_video_least = 300       # parameter for type = 0
         self.sankey_threshold = 1000        # parameter for type = 1
@@ -902,10 +902,15 @@ class Analyzer(object):
         self.to_sankey_graph_data(active_user, earlist, latest)
         
     def test(self):
+        # 统计所有log数据的数据量，为之后标定权值使用
+        # 这个函数只用执行一遍就行，只要result文件夹里面有data_count文件，就可以不执行这一步了
+        self.log_data_count()
+
+        # 之后对于三种分析，都是load_weight + calc_XXX的形式
         self.load_weight()
-        #self.calc_stream_value()
+        self.calc_stream_value()
         #self.calc_pie_graph_value()
-        self.calc_sankey_graph_value()
+        #self.calc_sankey_graph_value()
 
 def main():
     a = Analyzer('20740042X')

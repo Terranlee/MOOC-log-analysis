@@ -794,7 +794,7 @@ class Filter(object):
         return course_structure, course_mapping
 
     def files_check_exist(self):
-        file_suffix = [ '.structured_forum', '.structured_problem', 'structured_video',
+        file_suffix = [ '.structured_forum', '.structured_problem', '.structured_video',
                         '.video_time', '.course_structure', '.html']
         # check if there are files that are required but not exist
         fileset = set(os.listdir(self.result_dir))
@@ -807,6 +807,7 @@ class Filter(object):
     def files_check_delete(self):
         # check if there are files that are useless and can be deleted
         delete_file_suffix = ['.forum', '.forum_view', '.invalid', '.problem', '.video']
+        fileset = set(os.listdir(self.result_dir))
         for i in delete_file_suffix:
             if (self.c_id + i) in fileset:
                 print ('delete useless file: ' + self.c_id + i)
@@ -817,7 +818,7 @@ class Filter(object):
             check if all files required are generated
             check if we can delete some useless files
         '''
-        self.files_check_delete()
+        #self.files_check_delete()
         return self.files_check_exist()
 
     def debug_filter_by_event_type(self, filename, event_type):
@@ -1148,6 +1149,14 @@ class Filter(object):
     def run_on_local_computer(self):
         '''
             this function can run on data server or local computer
+            需要四个文件作为前提
+            20740042X_20150906_20151231.orig 从服务器获得的原始数据
+            20740042X.allnames 用sql_select.py获得的所有用户名
+            20740042X.html 带有课程导航栏的网页保存下来，用来分析课程结构
+                或者可以连接到课程的mongoDB数据库的结构
+            20740042X.forum_map 讨论区帖子和第XX讲的对应关系，目前采用的是手动生成的方法
+                把每一讲的ID和每一个帖子的ID对应起来，在计算机文化基础中，只考虑了第XX讲答疑这样的帖子
+                可以用connect_forum_lecture函数尝试自动生成，但是不是很准
         '''
         # parse the course structure
         self.parse_course_structure()
@@ -1164,16 +1173,12 @@ class Filter(object):
 
         if self.files_check():
             print ('all pre-processing ready')
-        # data preparation ends here
+            print ('begin reparse data')
+            self.reparse_data_by_date()
 
     def test(self):
-        self.parse_course_structure()
-        #self.parse_forum_by_structure()
-        #self.parse_problem_by_structure()
-        #self.parse_video_by_structure()
-        #self.debug_video_filter('i4x-TsinghuaX-20740042X-video-a18cba64ddbe459a9897c070a3f04adf', 161855, '2015-10-28')
-        #self.debug_filter_by_event_type('../result/20740042X.video.sorted', 'load_video_error') 
-        #self.reparse_data_by_date()
+        #self.run_on_server()
+        self.run_on_local_computer()
 
 def main():
     f = Filter(20150906, 20151231, '20740042X')
