@@ -14,14 +14,17 @@ class Analyzer(object):
         self.result_dir = '../result/'
         self.c_id = cid
 
-        # the max weight for each event
-        # one event equals to at most max_weight seconds of video watch
+        # 学习行为的最大权值，等效与max_weight秒的视频
         self.max_weight = 60 * 20
 
+        # 尽可能保证视频、讨论区、作业三部分的行为权值综合相等
+        # 但是也可以通过下面的两个参数进行调节
         # sum(problem) = sum(video) * sum_problem_weight
         # sum(forum) = sum(video) * sum_forum_weight
         self.sum_problem_weight = 1.0
         self.sum_forum_weight = 1.0
+
+        # 对讨论区某些行为的权值进行进行单独调整
         # weight(vote) = weight(create) * vote_over_create
         # weight(view) = weight(create) * view_over_create
         self.vote_over_create = 0.4
@@ -29,12 +32,15 @@ class Analyzer(object):
         # weight(save) = weight_min(check, graded, showanswer) * save_over_problem
         self.save_over_problem = 0.3
 
+        # 七天为一个时间间隔进行统计
         # used in uid_time_distribution
         self.time_interval = 7
 
+        # 每个部分最突出的学生数量，饼图中用到的
         # the maximum number of top student in each section
         self.max_top_student = 4
 
+        # sankey图用到的参数，如何选择活跃学生
         # which kind of filter we use when selecting active student
         # if type = 0, use absolute_count_filter
         # if type = 1, use absolute_value_filter
@@ -42,14 +48,16 @@ class Analyzer(object):
         # if type = 3, use absolute_counter_filter + absolute_value_filter
         # if type = 4, use relative_sort_filter + absolute_value_filter
         # if type = 5, use relative_sort_filter + absolute_count_filter
-        self.filter_type = 5
+        self.filter_type = 0
         self.sankey_video_least = 300       # parameter for type = 0
         self.sankey_threshold = 1000        # parameter for type = 1
         self.sankey_top_student = 100        # parameter for type = 2
 
+        # 调试
         self.debug_counter1 = 0
         self.debug_counter2 = 0
 
+        # 学习行为的权值
         self.event_param = {
             'watch_video': 0.0,
             'view_forum': 0.0,
@@ -62,6 +70,8 @@ class Analyzer(object):
             'problem_check': 0.0,
             'problem_graded': 0.0
         }
+
+        # 学习行为的类型
         self.forum_type = {
             'view_forum',
             'django_comment_client.base.views.vote_for_thread',
@@ -675,13 +685,9 @@ class Analyzer(object):
                     if log['event_type'] == 'watch_video' and log['time1'] == 0:
                         continue
                     user_id = log['context']['user_id']
-                    if user_id not in earlist:
+                    if user_id not in earlist or which_week < earlist[user_id]:
                         earlist[user_id] = which_week
-                    if user_id not in latest:
-                        latest[user_id] = which_week
-                    if which_week < earlist[user_id]:
-                        earlist[user_id] = which_week
-                    if which_week > latest[user_id]:
+                    if user_id not in latest or which_week > latest[user_id]:
                         latest[user_id] = which_week
         return earlist, latest
 
@@ -814,11 +820,11 @@ class Analyzer(object):
             nactive_name = nactive_template % (i + 2)
             never_nactive_name = never_nactive_template % (i + 2)
             # now at every inner week, there are total 5 nodes
-            data['nodes'].append([nactive_name, never_nactive_name, active_name, new_name, never_new_name])
+            data['nodes'].append([never_nactive_name, nactive_name, active_name, new_name, never_new_name])
         active_name = active_template % (num_of_weeks)
         nactive_name = nactive_template % (num_of_weeks)
         never_nactive_name = never_nactive_template % (num_of_weeks)
-        data['nodes'].append([nactive_name, never_nactive_name, active_name])
+        data['nodes'].append([never_nactive_name, nactive_name, active_name])
 
         # construct names
         for i in range(num_of_weeks):
@@ -850,7 +856,7 @@ class Analyzer(object):
                 if latest[user] > i:
                     data['names'][nactive_name].add(user)
                 elif latest[user] == i:
-                    data['names'][never_new_name].add(user)
+                    data['names'][never_nactive_name].add(user)
                 else:
                     # for debug
                     print ('!!!!!!!!!!Error, latest dict error!!!!!!!!!!')
@@ -870,13 +876,13 @@ class Analyzer(object):
             w2n_name = new_template % (i + 1)
             w2nn_name = never_new_template % (i + 1)
 
-            data['links'].append( [w1a_name, len(data['names'][w2na_name]), w2na_name] )
             data['links'].append( [w1a_name, len(data['names'][w2nna_name]), w2nna_name] )
+            data['links'].append( [w1a_name, len(data['names'][w2na_name]), w2na_name] )
             # connection between two active node
             data['links'].append( [w1a_name, len(data['names'][w1a_name] & data['names'][w2a_name]), w2a_name] )
 
             data['links'].append( [w2n_name, len(data['names'][w2n_name]), w2a_name] )
-            data['links'].append( [w2nna_name, len(data['names'][w2nna_name]), w2a_name])
+            data['links'].append( [w2nn_name, len(data['names'][w2nn_name]), w2a_name])
 
         for i in data['names']:
             data['names'][i] = list(data['names'][i])
@@ -896,7 +902,6 @@ class Analyzer(object):
         self.to_sankey_graph_data(active_user, earlist, latest)
         
     def test(self):
-        #self.log_data_count()
         self.load_weight()
         #self.calc_stream_value()
         #self.calc_pie_graph_value()
@@ -908,4 +913,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    

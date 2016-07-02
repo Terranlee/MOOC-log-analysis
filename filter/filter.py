@@ -19,13 +19,18 @@ class Filter(object):
 
     def __init__(self, s_date, e_date, cid):
         super(Filter, self).__init__()
+        # 初始化开始时间、截止时间、课程ID
         # start_date and end_date are numbers like 20150715
         # course_id is the filter of different classes
         self.start_date = s_date
         self.end_date = e_date
         self.c_id = cid
 
+        # 四个数据文件夹
+        # 数据路径为 /mnt/logs/edxdbweb1/log/tracking/
+        # 在这四个数据文件夹下面都有数据
         self.all_dirs = ['edxdbweb1', 'edxdbweb2', 'edxdbweb5', 'edxdbweb6']
+        # 保存结果的文件夹
         self.result_dir = '../result/'
         self.filelist = list()
 
@@ -224,6 +229,7 @@ class Filter(object):
         self.other_out = open(self.result_dir + self.c_id + '.other', 'w')
         self.invalid_out = open(self.result_dir + self.c_id + '.invalid', 'w')
 
+        # 所有类型的数据
         self.video_type = { 'play_video', 
                             'pause_video', 
                             'seek_video', 
