@@ -36,7 +36,7 @@ var which_threshold = 1;
 // 对于某一个stream，如果某个时间点的值小于该stream最大值的percent_threshold倍，则消除
 var percent_threshold = 0.1;
 // 对于每个时间点上的stream值进行排序，只保留前sort_threshold个
-var sort_threshold = 3;
+var sort_threshold = 4;
 
 // SVG绘图相关的全局变量
 
@@ -67,7 +67,7 @@ var stack = d3.layout.stack()
 // 每一层数据都自动转换成为key : values的形式
 var nest = d3.nest()
     .key(function(d) { return d.key; });        
-    // d.key是data.csv中的key，也就是课程ID，用这个作为第一层的group by
+    // d.key是data中的key，也就是课程ID，用这个作为第一层的group by
     // 之后就得到数组的第一个维度了，相同课程ID的那些entry形成第二个维度
     // key函数可以连续调用，就可以生成更高维度的数组了
 
