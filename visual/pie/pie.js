@@ -1,5 +1,6 @@
 
 function pie(treepath){
+    // 单击饼图的某个section可以将这个section进行放大，再次点击可以返回原状
 	var zoom_in = 3;
 	var zoom_out = 1 / zoom_in;
 	var zoom_status = 0;
